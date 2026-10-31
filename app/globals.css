@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens. Every colour in the app comes from here, so changing the
+ * accent (or tweaking dark mode) is a one-line edit.
+ */
+:root {
+  --canvas: #fafafa; /* page background */
+  --surface: #ffffff; /* cards */
+  --subtle: #f4f4f5; /* hover fills, empty cells */
+  --line: #e4e4e7;
+  --line-strong: #d4d4d8;
+  --ink: #18181b; /* main text */
+  --muted: #71717a; /* secondary text */
+  --accent: #6e56cf;
+  --accent-hover: #5f48c0;
+  --accent-ink: #5b45c0; /* accent-coloured text, tuned for contrast */
+  --on-accent: #ffffff; /* text on accent fills */
+  --danger: #dc2626;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --canvas: #09090b;
+    --surface: #131316;
+    --subtle: #1c1c21;
+    --line: #27272a;
+    --line-strong: #3f3f46;
+    --ink: #f4f4f5;
+    --muted: #a1a1aa;
+    --accent: #6e56cf;
+    --accent-hover: #7c66d9;
+    --accent-ink: #b1a3f5;
+    --on-accent: #ffffff;
+    --danger: #f87171;
+    color-scheme: dark;
+  }
+}
+
+/* Expose the tokens as Tailwind colours: bg-surface, text-muted, border-line… */
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-subtle: var(--subtle);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-ink: var(--accent-ink);
+  --color-on-accent: var(--on-accent);
+  --color-danger: var(--danger);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--canvas);
+  color: var(--ink);
+}
