@@ -151,3 +151,40 @@ function toMinutes(time: string) {
   const [h, m] = time.split(":").map(Number);
   return h * 60 + m;
 }
+
+// ---------------------------------------------------------------------------
+// Describing a range of slots
+
+/**
+ * How a run of consecutive slots reads in the viewer's timezone:
+ * { day: "Mon 9 Nov", time: "18:30–19:30", duration: "1 h" }.
+ */
+export function describeRange(
+  event: EventShape,
+  keys: string[],
+  viewerTz: string,
+  now = Date.now(),
+) {
+  const monday = event.date_mode === "weekdays" ? referenceMonday(event.timezone, now) : "";
+  const startInstant = slotInstant(keys[0], event, monday);
+  const endInstant = startInstant + keys.length * SLOT_MINUTES * 60_000;
+  const start = zonedParts(startInstant, viewerTz);
+  const end = zonedParts(endInstant, viewerTz);
+
+  const day =
+    event.date_mode === "dates"
+      ? formatISODate(start.date)
+      : WEEKDAYS.find((w) => w.code === start.weekday)!.long;
+
+  // Ending exactly at midnight reads better as "24:00" than "00:00".
+  const endsAtMidnight = end.time === "00:00" && end.date !== start.date;
+  const endTime = endsAtMidnight ? "24:00" : end.time;
+  const nextDay = end.date !== start.date && !endsAtMidnight ? " (+1 day)" : "";
+
+  const minutes = keys.length * SLOT_MINUTES;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  const duration = h === 0 ? `${m} min` : m === 0 ? `${h} h` : `${h} h ${m} min`;
+
+  return { day, time: `${start.time}–${endTime}${nextDay}`, duration };
+}

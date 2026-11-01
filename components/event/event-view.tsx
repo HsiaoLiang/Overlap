@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import { Globe } from "lucide-react";
 import { loadParticipants, saveAvailability } from "@/app/actions";
+import { BestTimes } from "@/components/event/best-times";
 import { GroupPanel } from "@/components/event/group-panel";
 import { JoinForm } from "@/components/event/join-form";
 import { MyGrid } from "@/components/event/my-grid";
@@ -14,6 +15,7 @@ import { useBrowserTimeZone } from "@/hooks/use-client-value";
 import type { SelectMode } from "@/hooks/use-drag-select";
 import { useEventChannel, type LiveStatus } from "@/hooks/use-event-channel";
 import { useStoredIdentity } from "@/hooks/use-stored-identity";
+import { bestTimes } from "@/lib/availability";
 import { cn } from "@/lib/cn";
 import { buildViewerGrid, slotKeys } from "@/lib/slots";
 import type { OverlapEvent, Participant } from "@/lib/types";
@@ -44,6 +46,11 @@ export function EventView({
     [event, viewerTimeZone],
   );
   const allKeys = useMemo(() => slotKeys(event), [event]);
+
+  // Best times update automatically whenever anyone's availability changes.
+  const ranges = useMemo(() => bestTimes(event, participants), [event, participants]);
+  const [selectedRangeId, setSelectedRangeId] = useState<string | null>(null);
+  const selectedRange = ranges.find((r) => r.id === selectedRangeId) ?? null;
 
   // On phones the two panels become tabs; on wide screens they sit side by side.
   const [mobileTab, setMobileTab] = useState<"mine" | "group">("mine");
@@ -118,6 +125,22 @@ export function EventView({
         )}
       </div>
 
+      {viewerTimeZone ? (
+        <BestTimes
+          event={event}
+          ranges={ranges}
+          participants={participants}
+          viewerTimeZone={viewerTimeZone}
+          selectedId={selectedRange?.id ?? null}
+          onSelect={(id) => {
+            setSelectedRangeId(id);
+            if (id) setMobileTab("group"); // show it on the heatmap
+          }}
+        />
+      ) : (
+        <div className="h-40 animate-pulse rounded-2xl bg-subtle" />
+      )}
+
       <div className="lg:hidden">
         <SegmentedControl
           label="Show"
@@ -184,7 +207,12 @@ export function EventView({
             <LiveBadge status={liveStatus} recentChange={recentChange} />
           </div>
           {grid ? (
-            <GroupPanel grid={grid} participants={participants} meId={me?.id ?? null} />
+            <GroupPanel
+              grid={grid}
+              participants={participants}
+              meId={me?.id ?? null}
+              highlightKeys={selectedRange?.keys ?? null}
+            />
           ) : (
             <GridSkeleton />
           )}

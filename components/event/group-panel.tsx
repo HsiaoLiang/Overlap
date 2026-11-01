@@ -18,10 +18,13 @@ export function GroupPanel({
   grid,
   participants,
   meId,
+  highlightKeys,
 }: {
   grid: ViewerGrid;
   participants: Participant[];
   meId: string | null;
+  /** Slots to outline, e.g. the best time the viewer tapped. */
+  highlightKeys: string[] | null;
 }) {
   const free = useMemo(() => freeBySlot(participants), [participants]);
   const total = participants.length;
@@ -29,7 +32,8 @@ export function GroupPanel({
   // `hovered` follows the mouse; `pinned` is set by a click or tap.
   const [hovered, setHovered] = useState<string | null>(null);
   const [pinned, setPinned] = useState<string | null>(null);
-  const activeKey = hovered ?? pinned;
+  const highlighted = useMemo(() => new Set(highlightKeys), [highlightKeys]);
+  const activeKey = hovered ?? pinned ?? highlightKeys?.[0] ?? null;
 
   // Show only one person's availability when their name is selected.
   const [focusId, setFocusId] = useState<string | null>(null);
@@ -114,6 +118,7 @@ export function GroupPanel({
               onBlur={() => setHovered(null)}
               className={cn(
                 "h-7 transition-[background-color] duration-300 sm:h-6",
+                highlighted.has(key) && "shadow-[inset_0_0_0_2px_var(--ink)]",
                 key === activeKey && "relative z-10 outline-2 -outline-offset-2 outline-ink",
               )}
               style={{

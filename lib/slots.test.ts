@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildViewerGrid, slotKeys } from "./slots";
+import { buildViewerGrid, describeRange, slotKeys } from "./slots";
 import type { OverlapEvent } from "./types";
 
 const taipeiDinner: Pick<
@@ -76,5 +76,46 @@ describe("buildViewerGrid", () => {
 
     const la = buildViewerGrid(weekly, "America/Los_Angeles", Date.UTC(2026, 10, 4));
     expect(la.columns.map((c) => c.id)).toEqual(["sun", "mon", "tue"]);
+  });
+});
+
+describe("describeRange", () => {
+  const keys = ["2026-11-09 18:30", "2026-11-09 19:00"];
+
+  it("describes a range in the event's own timezone", () => {
+    expect(describeRange(taipeiDinner, keys, "Asia/Taipei")).toEqual({
+      day: "Mon 9 Nov",
+      time: "18:30–19:30",
+      duration: "1 h",
+    });
+  });
+
+  it("converts to the viewer's day and time", () => {
+    // 18:30 Mon in Taipei = 02:30 Mon in LA.
+    expect(describeRange(taipeiDinner, keys, "America/Los_Angeles")).toMatchObject({
+      day: "Mon 9 Nov",
+      time: "02:30–03:30",
+    });
+  });
+
+  it("handles ranges that end at or run past the viewer's midnight", () => {
+    // 15:30–17:00 Mon in Taipei = 07:30–09:00 UTC.
+    const late = ["2026-11-09 15:30", "2026-11-09 16:00", "2026-11-09 16:30"];
+    // Los Angeles (UTC−8): Sun 23:30 → Mon 01:00.
+    expect(describeRange(taipeiDinner, late, "America/Los_Angeles")).toEqual({
+      day: "Sun 8 Nov",
+      time: "23:30–01:00 (+1 day)",
+      duration: "1 h 30 min",
+    });
+    // Anchorage (UTC−9): Sun 22:30 → midnight, shown as 24:00.
+    expect(describeRange(taipeiDinner, late, "America/Anchorage")).toMatchObject({
+      day: "Sun 8 Nov",
+      time: "22:30–24:00",
+    });
+  });
+
+  it("names the weekday for weekday events", () => {
+    const weekly = { ...taipeiDinner, date_mode: "weekdays" as const, days: ["mon"] };
+    expect(describeRange(weekly, ["mon 09:00"], "Asia/Taipei").day).toBe("Monday");
   });
 });
