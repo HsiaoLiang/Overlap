@@ -1,16 +1,19 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Globe, Lock, Users } from "lucide-react";
+import { Globe } from "lucide-react";
 import { saveAvailability } from "@/app/actions";
+import { GroupPanel } from "@/components/event/group-panel";
 import { JoinForm } from "@/components/event/join-form";
 import { MyGrid } from "@/components/event/my-grid";
 import { SaveStatus } from "@/components/event/save-status";
 import { TimezoneSelect } from "@/components/timezone-select";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import { useAutosave } from "@/hooks/use-autosave";
 import { useBrowserTimeZone } from "@/hooks/use-client-value";
 import type { SelectMode } from "@/hooks/use-drag-select";
 import { useStoredIdentity } from "@/hooks/use-stored-identity";
+import { cn } from "@/lib/cn";
 import { buildViewerGrid, slotKeys } from "@/lib/slots";
 import type { OverlapEvent, Participant } from "@/lib/types";
 
@@ -40,6 +43,9 @@ export function EventView({
     [event, viewerTimeZone],
   );
   const allKeys = useMemo(() => slotKeys(event), [event]);
+
+  // On phones the two panels become tabs; on wide screens they sit side by side.
+  const [mobileTab, setMobileTab] = useState<"mine" | "group">("mine");
 
   const autosave = useAutosave(saveAvailability);
   const mySlots = useMemo(() => new Set(me?.slots), [me?.slots]);
@@ -81,8 +87,25 @@ export function EventView({
         )}
       </div>
 
+      <div className="lg:hidden">
+        <SegmentedControl
+          label="Show"
+          value={mobileTab}
+          onChange={setMobileTab}
+          options={[
+            { value: "mine", label: "Your availability" },
+            { value: "group", label: `Group (${participants.length})` },
+          ]}
+        />
+      </div>
+
       <div className="grid items-start gap-6 lg:grid-cols-2">
-        <section className="rounded-2xl border border-line bg-surface p-3 shadow-sm sm:p-5">
+        <section
+          className={cn(
+            "rounded-2xl border border-line bg-surface p-3 shadow-sm sm:p-5",
+            mobileTab !== "mine" && "hidden lg:block",
+          )}
+        >
           {!grid ? (
             <GridSkeleton />
           ) : me ? (
@@ -119,30 +142,17 @@ export function EventView({
           )}
         </section>
 
-        {/* Step 3 turns this into the group heatmap. */}
-        <section className="rounded-2xl border border-line bg-surface p-3 shadow-sm sm:p-5">
-          <h2 className="mb-4 font-semibold">Responses ({participants.length})</h2>
-          {participants.length === 0 ? (
-            <div className="flex flex-col items-center py-10 text-center">
-              <div className="mb-3 flex size-10 items-center justify-center rounded-full bg-subtle">
-                <Users className="size-5 text-muted" aria-hidden />
-              </div>
-              <p className="font-medium">No one has responded yet</p>
-              <p className="mt-1 text-sm text-muted">Share the link to get started.</p>
-            </div>
+        <section
+          className={cn(
+            "rounded-2xl border border-line bg-surface p-3 shadow-sm sm:p-5",
+            mobileTab !== "group" && "hidden lg:block",
+          )}
+        >
+          <h2 className="mb-4 font-semibold">Group availability</h2>
+          {grid ? (
+            <GroupPanel grid={grid} participants={participants} meId={me?.id ?? null} />
           ) : (
-            <ul className="flex flex-wrap gap-2">
-              {participants.map((p) => (
-                <li
-                  key={p.id}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1 text-sm"
-                >
-                  {p.name}
-                  {p.id === me?.id && <span className="text-muted">(you)</span>}
-                  {p.hasPin && <Lock className="size-3 text-muted" aria-label="PIN protected" />}
-                </li>
-              ))}
-            </ul>
+            <GridSkeleton />
           )}
         </section>
       </div>
