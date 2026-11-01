@@ -105,7 +105,7 @@ export function GroupPanel({
       <TimeGrid
         grid={grid}
         bodyProps={bodyProps}
-        renderCell={({ key, row, col }) => {
+        renderCell={({ key, row, col, tabIndex }) => {
           const count = free.get(key)?.length ?? 0;
           const strength = focused ? (focusedSlots.has(key) ? 100 : 0) : heatStrength(count, total);
           return (
@@ -113,6 +113,9 @@ export function GroupPanel({
               key={key}
               type="button"
               data-key={key}
+              data-row={row}
+              data-col={col}
+              tabIndex={tabIndex}
               aria-label={`${slotLabel(grid, row, col)}: ${count} of ${total} free`}
               onFocus={() => setHovered(key)}
               onBlur={() => setHovered(null)}
@@ -123,7 +126,7 @@ export function GroupPanel({
               )}
               style={{
                 background: strength
-                  ? `color-mix(in oklch, var(--accent) ${strength}%, var(--surface))`
+                  ? `color-mix(in oklch, var(--heat) ${strength}%, var(--surface))`
                   : "var(--surface)",
               }}
             />
@@ -233,7 +236,7 @@ function Legend({ total }: { total: number }) {
         className="h-2 flex-1 rounded-full border border-line"
         style={{
           background:
-            "linear-gradient(to right, var(--surface), color-mix(in oklch, var(--accent) 20%, var(--surface)), var(--accent))",
+            "linear-gradient(to right, var(--surface), color-mix(in oklch, var(--heat) 20%, var(--surface)), var(--heat))",
         }}
       />
       <span>

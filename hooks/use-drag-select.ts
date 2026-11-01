@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent } from "react";
+import { useRef, useState, type MouseEvent, type PointerEvent } from "react";
 
 export type GridCell = { row: number; col: number };
 export type SelectMode = "add" | "remove";
@@ -82,9 +82,6 @@ export function useDragSelect({
         if (e.detail === 0 && !isDisabled(cell)) {
           onCommit([cell], isSelected(cell) ? "remove" : "add");
         }
-      },
-      onKeyDown: (e: KeyboardEvent) => {
-        if (e.key === " ") e.preventDefault(); // don't scroll the page
       },
     };
   }

@@ -15,13 +15,18 @@
   --accent: #6e56cf;
   --accent-hover: #5f48c0;
   --accent-ink: #5b45c0; /* accent-coloured text, tuned for contrast */
+  --heat: #6e56cf; /* heatmap colour (the accent; brighter in dark mode) */
   --on-accent: #ffffff; /* text on accent fills */
   --danger: #dc2626;
   color-scheme: light;
 }
 
+/*
+ * Dark mode. By default we follow the system setting; the theme toggle can
+ * force a choice by setting data-theme="light" or "dark" on <html>.
+ */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --canvas: #09090b;
     --surface: #131316;
     --subtle: #1c1c21;
@@ -32,10 +37,28 @@
     --accent: #6e56cf;
     --accent-hover: #7c66d9;
     --accent-ink: #b1a3f5;
+    --heat: #8f7cf4;
     --on-accent: #ffffff;
     --danger: #f87171;
     color-scheme: dark;
   }
+}
+
+:root[data-theme="dark"] {
+  --canvas: #09090b;
+  --surface: #131316;
+  --subtle: #1c1c21;
+  --line: #27272a;
+  --line-strong: #3f3f46;
+  --ink: #f4f4f5;
+  --muted: #a1a1aa;
+  --accent: #6e56cf;
+  --accent-hover: #7c66d9;
+  --accent-ink: #b1a3f5;
+  --heat: #8f7cf4;
+  --on-accent: #ffffff;
+  --danger: #f87171;
+  color-scheme: dark;
 }
 
 /* Expose the tokens as Tailwind colours: bg-surface, text-muted, border-line… */
@@ -71,4 +94,15 @@
 body {
   background: var(--canvas);
   color: var(--ink);
+}
+
+/* Respect "reduce motion": keep things instant for people who ask for it. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

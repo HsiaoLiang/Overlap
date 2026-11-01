@@ -111,7 +111,7 @@ export function EventView({
   });
 
   return (
-    <div className="mt-6 space-y-4">
+    <div className="mt-6 animate-fade-in space-y-4">
       <div className="flex flex-wrap items-center gap-1 text-sm text-muted">
         <Globe className="size-4" aria-hidden />
         <span>Times shown in</span>

@@ -57,6 +57,12 @@ steps add them:
 If the group view says **Connecting…** forever, check **Realtime → Settings**
 in Supabase and make sure public channels are allowed.
 
+## Troubleshooting
+
+- **Styles look out of date in `npm run dev`:** stop the server, delete the
+  `.next` folder, and start it again. (Production builds aren't affected.)
+- **Group view stuck on "Connecting…":** see the Realtime note above.
+
 ## Scripts
 
 | Command         | What it does                 |

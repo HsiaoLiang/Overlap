@@ -39,7 +39,7 @@ function HeatmapIllustration() {
           key={i}
           className="aspect-[2/1] rounded-md"
           style={{
-            background: `color-mix(in oklch, var(--accent) ${count * 25}%, var(--subtle))`,
+            background: `color-mix(in oklch, var(--heat) ${count * 25}%, var(--subtle))`,
           }}
         />
       ))}

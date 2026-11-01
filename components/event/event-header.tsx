@@ -1,5 +1,5 @@
 import { CalendarDays, Clock, Globe } from "lucide-react";
-import { CopyLinkButton } from "@/components/event/copy-link-button";
+import { ShareButtons } from "@/components/event/share-buttons";
 import { describeDays, describeTimes } from "@/lib/event-summary";
 import type { OverlapEvent } from "@/lib/types";
 
@@ -22,7 +22,7 @@ export function EventHeader({ event }: { event: OverlapEvent }) {
           </li>
         </ul>
       </div>
-      <CopyLinkButton slug={event.slug} />
+      <ShareButtons slug={event.slug} eventName={event.name} />
     </div>
   );
 }

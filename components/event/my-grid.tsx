@@ -27,7 +27,7 @@ export function MyGrid({
     <TimeGrid
       grid={grid}
       bodyProps={drag.containerProps}
-      renderCell={({ key, row, col }) => {
+      renderCell={({ key, row, col, tabIndex }) => {
         const isOn = drag.isCellSelected({ row, col });
         const column = grid.columns[col];
         return (
@@ -35,6 +35,7 @@ export function MyGrid({
             key={key}
             type="button"
             {...drag.getCellProps({ row, col })}
+            tabIndex={tabIndex}
             aria-pressed={isOn}
             aria-label={`${column.label} ${column.sublabel ?? ""} ${grid.rows[row].time}`}
             className={cn(
