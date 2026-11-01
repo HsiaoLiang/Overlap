@@ -56,6 +56,18 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* animate-fade-in: a short fade + slide for things that just appeared. */
+@theme {
+  --animate-fade-in: fade-in 200ms ease-out;
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(2px);
+    }
+  }
+}
+
 body {
   background: var(--canvas);
   color: var(--ink);

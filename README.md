@@ -14,7 +14,9 @@ Built with Next.js (App Router) · TypeScript · Tailwind CSS · Supabase.
 - **Row Level Security is on with no policies**, so the public (publishable)
   key can't read or write anything. Only the server, using the secret key, can.
 - Times are stored in the event's own timezone and converted to each viewer's
-  timezone for display.
+  timezone for display (`lib/slots.ts`).
+- **Live updates** come from a Postgres trigger that sends a Realtime broadcast
+  on `event:<id>` whenever someone joins or saves. Browsers only listen.
 
 ## Run it locally
 
@@ -47,7 +49,13 @@ Open http://localhost:3000.
    `NEXT_PUBLIC_SUPABASE_URL`.
 
 Run each new file in `supabase/migrations/` the same way, in order, as later
-steps add them.
+steps add them:
+
+- `001_tables.sql` — tables and security
+- `002_realtime.sql` — live updates (a trigger that broadcasts every join/save)
+
+If the group view says **Connecting…** forever, check **Realtime → Settings**
+in Supabase and make sure public channels are allowed.
 
 ## Scripts
 

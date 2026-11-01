@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Globe } from "lucide-react";
-import { saveAvailability } from "@/app/actions";
+import { loadParticipants, saveAvailability } from "@/app/actions";
 import { GroupPanel } from "@/components/event/group-panel";
 import { JoinForm } from "@/components/event/join-form";
 import { MyGrid } from "@/components/event/my-grid";
@@ -12,6 +12,7 @@ import { SegmentedControl } from "@/components/ui/segmented-control";
 import { useAutosave } from "@/hooks/use-autosave";
 import { useBrowserTimeZone } from "@/hooks/use-client-value";
 import type { SelectMode } from "@/hooks/use-drag-select";
+import { useEventChannel, type LiveStatus } from "@/hooks/use-event-channel";
 import { useStoredIdentity } from "@/hooks/use-stored-identity";
 import { cn } from "@/lib/cn";
 import { buildViewerGrid, slotKeys } from "@/lib/slots";
@@ -64,13 +65,43 @@ export function EventView({
   }
 
   function handleJoined(participant: Participant, pin: string | undefined) {
-    setParticipants((list) =>
-      list.some((p) => p.id === participant.id)
-        ? list.map((p) => (p.id === participant.id ? participant : p))
-        : [...list, participant],
-    );
+    setParticipants((list) => upsert(list, participant));
     setIdentity({ participantId: participant.id, pin });
   }
+
+  // --- Live updates -------------------------------------------------------
+
+  const meId = me?.id ?? null;
+  const [recentChange, setRecentChange] = useState<string | null>(null);
+  const recentTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  /** Someone else joined or saved. */
+  function handleRemoteParticipant(incoming: Participant) {
+    // Ignore echoes of our own saves: what's on our screen is already newer.
+    if (incoming.id === meId) return;
+    const isNew = !participants.some((p) => p.id === incoming.id);
+    setParticipants((list) => upsert(list, incoming));
+
+    setRecentChange(`${incoming.name} ${isNew ? "joined" : "updated"}`);
+    clearTimeout(recentTimer.current);
+    recentTimer.current = setTimeout(() => setRecentChange(null), 4000);
+  }
+
+  /** Reload everyone after (re)connecting, in case we missed a message. Keeps our own answers. */
+  async function resync() {
+    const fresh = await loadParticipants(event.slug);
+    if (!fresh) return;
+    setParticipants((list) => {
+      const mine = list.find((p) => p.id === meId);
+      if (!mine) return fresh;
+      return upsert(fresh, mine);
+    });
+  }
+
+  const liveStatus = useEventChannel(event.id, {
+    onParticipant: handleRemoteParticipant,
+    onResync: resync,
+  });
 
   return (
     <div className="mt-6 space-y-4">
@@ -148,7 +179,10 @@ export function EventView({
             mobileTab !== "group" && "hidden lg:block",
           )}
         >
-          <h2 className="mb-4 font-semibold">Group availability</h2>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+            <h2 className="font-semibold">Group availability</h2>
+            <LiveBadge status={liveStatus} recentChange={recentChange} />
+          </div>
           {grid ? (
             <GroupPanel grid={grid} participants={participants} meId={me?.id ?? null} />
           ) : (
@@ -157,6 +191,40 @@ export function EventView({
         </section>
       </div>
     </div>
+  );
+}
+
+/** Replace a participant by id, or add them if they're new. */
+function upsert(list: Participant[], participant: Participant) {
+  return list.some((p) => p.id === participant.id)
+    ? list.map((p) => (p.id === participant.id ? participant : p))
+    : [...list, participant];
+}
+
+function LiveBadge({ status, recentChange }: { status: LiveStatus; recentChange: string | null }) {
+  const label = { live: "Live", connecting: "Connecting…", offline: "Offline" }[status];
+  return (
+    <span aria-live="polite" className="inline-flex items-center gap-2 text-xs text-muted">
+      {recentChange && (
+        <span className="animate-fade-in rounded-full bg-accent/10 px-2 py-0.5 text-accent-ink">
+          {recentChange}
+        </span>
+      )}
+      <span className="inline-flex items-center gap-1.5">
+        <span className="relative flex size-2">
+          {status === "live" && (
+            <span className="absolute inline-flex size-full animate-ping rounded-full bg-accent opacity-60" />
+          )}
+          <span
+            className={cn(
+              "relative inline-flex size-2 rounded-full",
+              status === "live" ? "bg-accent" : status === "connecting" ? "bg-line-strong" : "bg-danger",
+            )}
+          />
+        </span>
+        {label}
+      </span>
+    </span>
   );
 }
 

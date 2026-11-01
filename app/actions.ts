@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { getEvent } from "@/lib/data";
+import { getEvent, getParticipants } from "@/lib/data";
 import {
   checkPin,
   PARTICIPANT_ROW_COLUMNS,
@@ -186,6 +186,15 @@ export async function saveAvailability(input: z.input<typeof saveSchema>): Promi
   if (updateError) return serverError("saveAvailability/update", updateError);
 
   return { ok: true };
+}
+
+// ---------------------------------------------------------------------------
+// Reloading participants (used after a realtime reconnect)
+
+/** The current participants of an event, or null if it doesn't exist. */
+export async function loadParticipants(slug: string): Promise<Participant[] | null> {
+  const event = await getEvent(z.string().max(20).parse(slug));
+  return event ? getParticipants(event.id) : null;
 }
 
 function serverError(where: string, error: unknown) {
