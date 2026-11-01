@@ -14,6 +14,12 @@ export function toISODate(year: number, monthIndex: number, day: number) {
   return date.toISOString().slice(0, 10);
 }
 
+/** addDays("2026-11-30", 1) → "2026-12-01" */
+export function addDays(iso: string, days: number) {
+  const [y, m, d] = iso.split("-").map(Number);
+  return toISODate(y, m - 1, d + days);
+}
+
 /** Move by `delta` months. `monthIndex` is 0-based (0 = January). */
 export function addMonths(year: number, monthIndex: number, delta: number) {
   const date = new Date(Date.UTC(year, monthIndex + delta, 1));

@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { EventHeader } from "@/components/event/event-header";
-import { getEvent } from "@/lib/data";
+import { EventView } from "@/components/event/event-view";
+import { getEvent, getParticipants } from "@/lib/data";
 
 export async function generateMetadata({ params }: PageProps<"/e/[slug]">): Promise<Metadata> {
   const { slug } = await params;
@@ -14,14 +15,12 @@ export default async function EventPage({ params }: PageProps<"/e/[slug]">) {
   const event = await getEvent(slug);
   if (!event) notFound();
 
+  const participants = await getParticipants(event.id);
+
   return (
     <main className="mx-auto w-full max-w-6xl px-4 pt-4 pb-16 sm:px-6 sm:pt-8">
       <EventHeader event={event} />
-
-      {/* Step 2 replaces this with the join form and availability grid. */}
-      <div className="mt-8 rounded-2xl border border-dashed border-line-strong p-10 text-center text-sm text-muted">
-        The availability grid arrives in step 2.
-      </div>
+      <EventView event={event} initialParticipants={participants} />
     </main>
   );
 }

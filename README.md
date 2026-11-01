@@ -56,3 +56,4 @@ steps add them.
 | `npm run dev`   | Start the dev server         |
 | `npm run build` | Production build             |
 | `npm run lint`  | Lint                         |
+| `npm test`      | Unit tests (timezone logic)  |

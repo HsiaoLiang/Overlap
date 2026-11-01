@@ -22,7 +22,7 @@ export function TimezoneSelect({
   onChange,
   ...props
 }: { value: string; onChange: (tz: string) => void } & Omit<
-  ComponentProps<"select">,
+  ComponentProps<typeof Select>,
   "value" | "onChange"
 >) {
   // The list is built in the browser only (server and browser lists can differ).

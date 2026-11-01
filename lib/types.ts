@@ -18,6 +18,15 @@ export type OverlapEvent = {
   created_at: string;
 };
 
+/** A participant as the browser sees it (no PIN data). */
+export type Participant = {
+  id: string;
+  name: string;
+  /** Slot keys this person is free, e.g. "2026-11-03 09:30". See lib/slots.ts. */
+  slots: string[];
+  hasPin: boolean;
+};
+
 /** The event columns that are safe to send to the browser. */
 export const EVENT_COLUMNS =
   "id, slug, name, date_mode, days, start_minute, end_minute, timezone, created_at";

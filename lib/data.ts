@@ -1,8 +1,13 @@
 import "server-only";
 import { cache } from "react";
 import { createServerClient } from "@/lib/supabase/server";
+import {
+  PARTICIPANT_ROW_COLUMNS,
+  toPublicParticipant,
+  type ParticipantRow,
+} from "@/lib/participants";
 import { isValidSlug } from "@/lib/slug";
-import { EVENT_COLUMNS, type OverlapEvent } from "@/lib/types";
+import { EVENT_COLUMNS, type OverlapEvent, type Participant } from "@/lib/types";
 
 /**
  * Load an event by its slug, or null if it doesn't exist.
@@ -22,3 +27,16 @@ export const getEvent = cache(async (slug: string): Promise<OverlapEvent | null>
   if (error) throw error;
   return data as OverlapEvent | null;
 });
+
+/** Everyone who has responded to an event, oldest first, minus PIN data. */
+export async function getParticipants(eventId: string): Promise<Participant[]> {
+  const supabase = createServerClient();
+  const { data, error } = await supabase
+    .from("participants")
+    .select(PARTICIPANT_ROW_COLUMNS)
+    .eq("event_id", eventId)
+    .order("created_at");
+
+  if (error) throw error;
+  return (data as ParticipantRow[]).map(toPublicParticipant);
+}
