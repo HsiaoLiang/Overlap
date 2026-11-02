@@ -6,10 +6,10 @@ import { loadParticipants, saveAvailability } from "@/app/actions";
 import { BestTimes } from "@/components/event/best-times";
 import { GroupPanel } from "@/components/event/group-panel";
 import { JoinForm } from "@/components/event/join-form";
+import { MobileViewTabs, type MobileView } from "@/components/event/mobile-view-tabs";
 import { MyGrid } from "@/components/event/my-grid";
 import { SaveStatus } from "@/components/event/save-status";
 import { TimezoneSelect } from "@/components/timezone-select";
-import { SegmentedControl } from "@/components/ui/segmented-control";
 import { useAutosave } from "@/hooks/use-autosave";
 import { useBrowserTimeZone } from "@/hooks/use-client-value";
 import type { SelectMode } from "@/hooks/use-drag-select";
@@ -53,7 +53,11 @@ export function EventView({
   const selectedRange = ranges.find((r) => r.id === selectedRangeId) ?? null;
 
   // On phones the two panels become tabs; on wide screens they sit side by side.
-  const [mobileTab, setMobileTab] = useState<"mine" | "group">("mine");
+  const [mobileTab, setMobileTab] = useState<MobileView>("mine");
+
+  // A short "Bea updated" notice next to the Live badge.
+  const [recentChange, setRecentChange] = useState<string | null>(null);
+  const recentTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const autosave = useAutosave(saveAvailability);
   const mySlots = useMemo(() => new Set(me?.slots), [me?.slots]);
@@ -74,13 +78,13 @@ export function EventView({
   function handleJoined(participant: Participant, pin: string | undefined) {
     setParticipants((list) => upsert(list, participant));
     setIdentity({ participantId: participant.id, pin });
+    // Our own "joined" broadcast can arrive before we know it's us: hide it.
+    setRecentChange((notice) => (notice === `${participant.name} joined` ? null : notice));
   }
 
   // --- Live updates -------------------------------------------------------
 
   const meId = me?.id ?? null;
-  const [recentChange, setRecentChange] = useState<string | null>(null);
-  const recentTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   /** Someone else joined or saved. */
   function handleRemoteParticipant(incoming: Participant) {
@@ -111,7 +115,7 @@ export function EventView({
   });
 
   return (
-    <div className="mt-6 animate-fade-in space-y-4">
+    <div className="mt-6 animate-fade-in space-y-4 pb-8 lg:pb-0">
       <div className="flex flex-wrap items-center gap-1 text-sm text-muted">
         <Globe className="size-4" aria-hidden />
         <span>Times shown in</span>
@@ -141,17 +145,11 @@ export function EventView({
         <div className="h-40 animate-pulse rounded-2xl bg-subtle" />
       )}
 
-      <div className="lg:hidden">
-        <SegmentedControl
-          label="Show"
-          value={mobileTab}
-          onChange={setMobileTab}
-          options={[
-            { value: "mine", label: "Your availability" },
-            { value: "group", label: `Group (${participants.length})` },
-          ]}
-        />
-      </div>
+      <MobileViewTabs
+        value={mobileTab}
+        onChange={setMobileTab}
+        groupCount={participants.length}
+      />
 
       <div className="grid items-start gap-6 lg:grid-cols-2">
         <section
