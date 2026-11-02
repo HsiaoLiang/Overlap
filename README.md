@@ -1,12 +1,71 @@
-# Overlap
+<p align="center">
+  <img src="app/icon.svg" width="64" height="64" alt="" />
+</p>
 
-Find a time that works for everyone. Create an event, share the link, everyone
-paints their availability, and Overlap shows when most people are free.
-No sign-ups.
+<h1 align="center">Overlap</h1>
 
-Built with Next.js (App Router) · TypeScript · Tailwind CSS · Supabase.
+<p align="center">
+  <strong>Find the time that works for everyone.</strong><br />
+  Share a link, paint your free time, and see when the whole group overlaps — live.<br />
+  No sign-ups, no back-and-forth.
+</p>
 
-## How it fits together
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/event-dark.png" />
+  <img src="docs/screenshots/event-light.png" alt="An Overlap event: the best times at the top, your own availability on the left and the group heatmap on the right." />
+</picture>
+
+## How it works
+
+1. **Create an event.** Give it a name, pick specific dates or days of the
+   week, and set a time range. You get a short link like `/e/x7k2pq`.
+2. **Share the link.** Copy it, show a QR code, or send it straight from your
+   phone's share sheet.
+3. **Everyone paints their availability.** Enter a name, then click or drag
+   across the grid. It saves as you go.
+4. **Pick a time.** The heatmap shows where people overlap, and **Best times**
+   lists the top three slots and who can't make each one.
+
+<table>
+  <tr>
+    <td width="33%"><img src="docs/screenshots/mobile-create.png" alt="Creating an event on a phone: pick dates on a calendar" /></td>
+    <td width="33%"><img src="docs/screenshots/mobile-best-times.png" alt="An event on a phone with the top three best times" /></td>
+    <td width="33%"><img src="docs/screenshots/mobile-group.png" alt="The group heatmap on a phone, showing who is free at 19:00" /></td>
+  </tr>
+  <tr>
+    <td align="center">Create</td>
+    <td align="center">Best times</td>
+    <td align="center">Group heatmap</td>
+  </tr>
+</table>
+
+## Features
+
+- **Drag to paint.** Mark your free time with a mouse, finger or keyboard.
+  Changes save automatically.
+- **Group heatmap.** Darker means more people are free. Hover or tap any slot to
+  see exactly who can and can't make it, or tap a name to see one person's times.
+- **Best times.** The top three time ranges where the most people are free,
+  updated as answers come in.
+- **Live updates.** When someone joins or changes their answers, everyone's
+  screen updates instantly.
+- **Every timezone.** Times are shown in each viewer's own timezone, even when
+  that splits a day across midnight.
+- **No accounts.** Just a name. Add an optional 4-digit PIN so nobody else can
+  edit your answers.
+- **Easy to share.** Copy link, QR code, and link previews for LINE, Slack and
+  iMessage (Chinese event names included).
+- **Made for phones.** Mobile-first layout, light and dark mode, and keyboard
+  accessible.
+
+---
+
+## For developers
+
+Built with Next.js (App Router) · TypeScript · Tailwind CSS · Supabase
+(Postgres + Realtime) · deployed on Vercel.
+
+### How it fits together
 
 - **The browser never talks to the database directly.** Pages load data on the
   server, and every write goes through a Server Action (`app/actions.ts`) that
@@ -18,7 +77,7 @@ Built with Next.js (App Router) · TypeScript · Tailwind CSS · Supabase.
 - **Live updates** come from a Postgres trigger that sends a Realtime broadcast
   on `event:<id>` whenever someone joins or saves. Browsers only listen.
 
-## Run it locally
+### Run it locally
 
 You need Node.js 20.9 or newer.
 
@@ -32,7 +91,7 @@ npm run dev
 
 Open http://localhost:3000.
 
-## Supabase setup
+### Supabase setup
 
 1. Go to [supabase.com](https://supabase.com), sign in, and click **New project**.
    - Name: `overlap`. Pick a strong database password and save it somewhere.
@@ -57,13 +116,22 @@ steps add them:
 If the group view says **Connecting…** forever, check **Realtime → Settings**
 in Supabase and make sure public channels are allowed.
 
-## Troubleshooting
+### Deploy on Vercel
+
+1. In Vercel, **Add New → Project** and import this repository.
+2. Add the three environment variables from `.env.example`.
+3. Deploy. Then, under **Settings → Functions → Function Region**, pick the
+   region closest to your Supabase project and redeploy.
+
+Every push to `main` deploys automatically.
+
+### Troubleshooting
 
 - **Styles look out of date in `npm run dev`:** stop the server, delete the
   `.next` folder, and start it again. (Production builds aren't affected.)
 - **Group view stuck on "Connecting…":** see the Realtime note above.
 
-## Scripts
+### Scripts
 
 | Command         | What it does                 |
 | --------------- | ---------------------------- |
