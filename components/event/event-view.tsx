@@ -1,29 +1,39 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
-import { Globe } from "lucide-react";
-import { loadParticipants, saveAvailability } from "@/app/actions";
+import { useMemo, useRef, useState, useTransition } from "react";
+import { Globe, Lock } from "lucide-react";
+import {
+  finaliseEvent,
+  loadEventSnapshot,
+  reopenEvent,
+  saveAvailability,
+} from "@/app/actions";
 import { BestTimes } from "@/components/event/best-times";
+import { FinalBanner } from "@/components/event/final-banner";
 import { GroupPanel } from "@/components/event/group-panel";
 import { JoinForm } from "@/components/event/join-form";
 import { MobileViewTabs, type MobileView } from "@/components/event/mobile-view-tabs";
 import { MyGrid } from "@/components/event/my-grid";
+import { ChooseAnotherTime, OrganiserLinkNotice } from "@/components/event/organiser";
 import { SaveStatus } from "@/components/event/save-status";
 import { TimezoneSelect } from "@/components/timezone-select";
 import { useAutosave } from "@/hooks/use-autosave";
 import { useBrowserTimeZone } from "@/hooks/use-client-value";
 import type { SelectMode } from "@/hooks/use-drag-select";
 import { useEventChannel, type LiveStatus } from "@/hooks/use-event-channel";
+import { useHost } from "@/hooks/use-host";
 import { useStoredIdentity } from "@/hooks/use-stored-identity";
 import { bestTimes } from "@/lib/availability";
 import { cn } from "@/lib/cn";
+import { finalRangeKeys, finalRangeOf, rangeFrom, type FinalRange } from "@/lib/final";
 import { buildViewerGrid, slotKeys } from "@/lib/slots";
-import type { OverlapEvent, Participant } from "@/lib/types";
+import { SLOT_MINUTES } from "@/lib/time";
+import type { FinalState, OverlapEvent, Participant } from "@/lib/types";
 
 /**
  * The interactive part of the event page. Holds the list of participants
- * (the single source of truth for both grids), who "you" are, and which
- * timezone you're viewing in.
+ * (the single source of truth for both grids), who "you" are, which
+ * timezone you're viewing in, and whether the organiser has closed the event.
  */
 export function EventView({
   event,
@@ -52,6 +62,19 @@ export function EventView({
   const [selectedRangeId, setSelectedRangeId] = useState<string | null>(null);
   const selectedRange = ranges.find((r) => r.id === selectedRangeId) ?? null;
 
+  // The organiser's final time (null while the event is open). Updates live.
+  const [final, setFinal] = useState<FinalState>({
+    final_start: event.final_start,
+    final_end: event.final_end,
+    finalised_at: event.finalised_at,
+  });
+  const finalRange = finalRangeOf(final);
+  const isClosed = finalRange !== null;
+  const finalKeys = useMemo(() => {
+    const range = finalRangeOf(final);
+    return range ? finalRangeKeys(range) : null;
+  }, [final]);
+
   // On phones the two panels become tabs; on wide screens they sit side by side.
   const [mobileTab, setMobileTab] = useState<MobileView>("mine");
 
@@ -64,7 +87,7 @@ export function EventView({
 
   /** Paint or erase slots: update the screen immediately, then save. */
   function handlePaint(keys: string[], mode: SelectMode) {
-    if (!me) return;
+    if (!me || isClosed) return;
     const next = new Set(me.slots);
     for (const key of keys) {
       if (mode === "add") next.add(key);
@@ -80,6 +103,36 @@ export function EventView({
     setIdentity({ participantId: participant.id, pin });
     // Our own "joined" broadcast can arrive before we know it's us: hide it.
     setRecentChange((notice) => (notice === `${participant.name} joined` ? null : notice));
+  }
+
+  // --- Organiser -----------------------------------------------------------
+
+  const { hostToken, linkToSave, dismissLink } = useHost(event.slug);
+  const [isOrganising, startOrganising] = useTransition();
+  const [organiserError, setOrganiserError] = useState<string | null>(null);
+
+  function pickFinal(range: FinalRange) {
+    if (!hostToken) return;
+    setOrganiserError(null);
+    startOrganising(async () => {
+      const result = await finaliseEvent({ slug: event.slug, token: hostToken, ...range });
+      if (result.ok) {
+        setFinal(result.final);
+        setSelectedRangeId(null);
+      } else {
+        setOrganiserError(result.error);
+      }
+    });
+  }
+
+  function reopen() {
+    if (!hostToken) return;
+    setOrganiserError(null);
+    startOrganising(async () => {
+      const result = await reopenEvent({ slug: event.slug, token: hostToken });
+      if (result.ok) setFinal(result.final);
+      else setOrganiserError(result.error);
+    });
   }
 
   // --- Live updates -------------------------------------------------------
@@ -98,24 +151,40 @@ export function EventView({
     recentTimer.current = setTimeout(() => setRecentChange(null), 4000);
   }
 
-  /** Reload everyone after (re)connecting, in case we missed a message. Keeps our own answers. */
+  /** Reload everything after (re)connecting, in case we missed a message. Keeps our own answers. */
   async function resync() {
-    const fresh = await loadParticipants(event.slug);
-    if (!fresh) return;
+    const snapshot = await loadEventSnapshot(event.slug);
+    if (!snapshot) return;
     setParticipants((list) => {
       const mine = list.find((p) => p.id === meId);
-      if (!mine) return fresh;
-      return upsert(fresh, mine);
+      if (!mine) return snapshot.participants;
+      return upsert(snapshot.participants, mine);
     });
+    setFinal(snapshot.final);
   }
 
   const liveStatus = useEventChannel(event.id, {
     onParticipant: handleRemoteParticipant,
+    onFinalChange: setFinal, // the organiser closed or reopened the event
     onResync: resync,
   });
 
   return (
     <div className="mt-6 animate-fade-in space-y-4 pb-8 lg:pb-0">
+      {linkToSave && <OrganiserLinkNotice link={linkToSave} onDismiss={dismissLink} />}
+
+      {finalRange && viewerTimeZone && (
+        <FinalBanner
+          event={event}
+          range={finalRange}
+          participants={participants}
+          meId={meId}
+          viewerTimeZone={viewerTimeZone}
+          onReopen={hostToken ? reopen : undefined}
+          isBusy={isOrganising}
+        />
+      )}
+
       <div className="flex flex-wrap items-center gap-1 text-sm text-muted">
         <Globe className="size-4" aria-hidden />
         <span>Times shown in</span>
@@ -140,9 +209,30 @@ export function EventView({
             setSelectedRangeId(id);
             if (id) setMobileTab("group"); // show it on the heatmap
           }}
+          onPick={
+            hostToken && !isClosed
+              ? (range) => pickFinal(rangeFrom(range.keys[0], range.keys.length * SLOT_MINUTES))
+              : undefined
+          }
+          isPicking={isOrganising}
         />
       ) : (
         <div className="h-40 animate-pulse rounded-2xl bg-subtle" />
+      )}
+
+      {hostToken && !isClosed && viewerTimeZone && (
+        <ChooseAnotherTime
+          event={event}
+          viewerTimeZone={viewerTimeZone}
+          onPick={pickFinal}
+          isPicking={isOrganising}
+        />
+      )}
+
+      {organiserError && (
+        <p role="alert" className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">
+          {organiserError}
+        </p>
       )}
 
       <MobileViewTabs
@@ -184,11 +274,15 @@ export function EventView({
                   }
                 />
               </div>
-              <MyGrid grid={grid} selected={mySlots} onChange={handlePaint} />
+              <MyGrid grid={grid} selected={mySlots} onChange={handlePaint} readOnly={isClosed} />
               <p className="mt-3 text-center text-xs text-muted">
-                Tap or drag to mark when you&apos;re free. Changes save automatically.
+                {isClosed
+                  ? "The organiser has picked a time, so answers are locked."
+                  : "Tap or drag to mark when you're free. Changes save automatically."}
               </p>
             </>
+          ) : isClosed ? (
+            <ClosedNotice />
           ) : (
             <JoinForm slug={event.slug} onJoined={handleJoined} />
           )}
@@ -209,7 +303,7 @@ export function EventView({
               grid={grid}
               participants={participants}
               meId={me?.id ?? null}
-              highlightKeys={selectedRange?.keys ?? null}
+              highlightKeys={selectedRange?.keys ?? finalKeys}
             />
           ) : (
             <GridSkeleton />
@@ -251,6 +345,18 @@ function LiveBadge({ status, recentChange }: { status: LiveStatus; recentChange:
         {label}
       </span>
     </span>
+  );
+}
+
+function ClosedNotice() {
+  return (
+    <div className="flex flex-col items-center py-12 text-center">
+      <div className="mb-3 flex size-10 items-center justify-center rounded-full bg-subtle">
+        <Lock className="size-5 text-muted" aria-hidden />
+      </div>
+      <p className="font-medium">Responses are closed</p>
+      <p className="mt-1 text-sm text-muted">The organiser has picked a time. See it at the top.</p>
+    </div>
   );
 }
 

@@ -40,3 +40,19 @@ export async function getParticipants(eventId: string): Promise<Participant[]> {
   if (error) throw error;
   return (data as ParticipantRow[]).map(toPublicParticipant);
 }
+
+/** An event plus its organiser-token hash. Server only — for checking tokens. */
+export async function getEventWithHostHash(slug: string) {
+  const normalised = slug.toLowerCase();
+  if (!isValidSlug(normalised)) return null;
+
+  const supabase = createServerClient();
+  const { data, error } = await supabase
+    .from("events")
+    .select(`${EVENT_COLUMNS}, host_token_hash`)
+    .eq("slug", normalised)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data as (OverlapEvent & { host_token_hash: string | null }) | null;
+}

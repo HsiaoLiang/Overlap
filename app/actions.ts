@@ -1,8 +1,9 @@
 "use server";
 
-import { redirect } from "next/navigation";
 import { z } from "zod";
-import { getEvent, getParticipants } from "@/lib/data";
+import { getEvent, getEventWithHostHash, getParticipants } from "@/lib/data";
+import { finalRangeError } from "@/lib/final";
+import { createHostToken, isHostToken } from "@/lib/host";
 import {
   checkPin,
   PARTICIPANT_ROW_COLUMNS,
@@ -14,7 +15,13 @@ import { slotKeys } from "@/lib/slots";
 import { createServerClient } from "@/lib/supabase/server";
 import { generateSlug } from "@/lib/slug";
 import { isISODate, isValidTimeZone, WEEKDAY_CODES } from "@/lib/time";
-import { EVENT_COLUMNS, type OverlapEvent, type Participant, type Weekday } from "@/lib/types";
+import {
+  EVENT_COLUMNS,
+  type FinalState,
+  type OverlapEvent,
+  type Participant,
+  type Weekday,
+} from "@/lib/types";
 
 /*
  * Server Actions: the only code that writes to the database.
@@ -42,10 +49,21 @@ const createEventSchema = z
 
 export type CreateEventInput = z.input<typeof createEventSchema>;
 
-export async function createEvent(input: CreateEventInput): Promise<{ error: string }> {
+export type CreateEventResult =
+  | { ok: true; slug: string; hostToken: string }
+  | { ok: false; error: string };
+
+/**
+ * Create an event. Returns its slug and the organiser token. The token is
+ * shown to the organiser once (in the URL fragment); we only store its hash.
+ */
+export async function createEvent(input: CreateEventInput): Promise<CreateEventResult> {
   const parsed = createEventSchema.safeParse(input);
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Something's not right with the form." };
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? "Something's not right with the form.",
+    };
   }
   const { name, dateMode, days, startMinute, endMinute, timezone } = parsed.data;
 
@@ -56,6 +74,7 @@ export async function createEvent(input: CreateEventInput): Promise<{ error: str
       : WEEKDAY_CODES.filter((code) => days.includes(code));
 
   const supabase = createServerClient();
+  const host = createHostToken();
 
   // A random slug can (very rarely) collide with an existing one. The unique
   // constraint catches that (Postgres error 23505), and we just try again.
@@ -69,16 +88,17 @@ export async function createEvent(input: CreateEventInput): Promise<{ error: str
       start_minute: startMinute,
       end_minute: endMinute,
       timezone,
+      host_token_hash: host.hash,
     });
 
-    if (!error) redirect(`/e/${slug}`);
+    if (!error) return { ok: true, slug, hostToken: host.token };
     if (error.code !== "23505") {
       console.error("createEvent failed", error);
       break;
     }
   }
 
-  return { error: "We couldn't create your event. Please try again." };
+  return { ok: false, error: "We couldn't create your event. Please try again." };
 }
 
 // ---------------------------------------------------------------------------
@@ -109,6 +129,7 @@ export async function joinEvent(input: z.input<typeof joinSchema>): Promise<Join
 
   const event = await getEvent(slug);
   if (!event) return { ok: false, error: "This event doesn't exist any more." };
+  if (event.finalised_at) return { ok: false, error: CLOSED_MESSAGE };
 
   const supabase = createServerClient();
   const { data, error } = await supabase
@@ -172,6 +193,8 @@ export async function saveAvailability(input: z.input<typeof saveSchema>): Promi
   if (!data) return { ok: false, error: "We couldn't find you in this event. Please join again." };
 
   const row = data as unknown as ParticipantRow & { event: OverlapEvent };
+  if (row.event.finalised_at) return { ok: false, error: CLOSED_MESSAGE };
+
   const check = await checkPin(supabase, row, pin);
   if (!check.ok) return check;
 
@@ -189,12 +212,87 @@ export async function saveAvailability(input: z.input<typeof saveSchema>): Promi
 }
 
 // ---------------------------------------------------------------------------
-// Reloading participants (used after a realtime reconnect)
+// Reloading (used after a realtime reconnect)
 
-/** The current participants of an event, or null if it doesn't exist. */
-export async function loadParticipants(slug: string): Promise<Participant[] | null> {
+/** An event's current participants and final time, or null if it doesn't exist. */
+export async function loadEventSnapshot(
+  slug: string,
+): Promise<{ participants: Participant[]; final: FinalState } | null> {
   const event = await getEvent(z.string().max(20).parse(slug));
-  return event ? getParticipants(event.id) : null;
+  if (!event) return null;
+  const { final_start, final_end, finalised_at } = event;
+  return {
+    participants: await getParticipants(event.id),
+    final: { final_start, final_end, finalised_at },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Organiser: close the event with a final time, or reopen it
+
+const CLOSED_MESSAGE = "The organiser has closed this event, so answers can't be changed.";
+const NOT_ORGANISER = "Only the organiser can do that.";
+
+const hostSchema = z.object({
+  slug: z.string().max(20),
+  token: z.string().min(1).max(100),
+});
+
+/** Is this the organiser's token for the event? (Used to show organiser controls.) */
+export async function verifyHost(input: z.input<typeof hostSchema>): Promise<boolean> {
+  const parsed = hostSchema.safeParse(input);
+  if (!parsed.success) return false;
+  const event = await getEventWithHostHash(parsed.data.slug);
+  return isHostToken(parsed.data.token, event?.host_token_hash ?? null);
+}
+
+const finaliseSchema = hostSchema.extend({
+  start: z.string().max(20),
+  end: z.string().max(20),
+});
+
+export type FinaliseResult = { ok: true; final: FinalState } | { ok: false; error: string };
+
+/** Close the event and announce the final time. */
+export async function finaliseEvent(
+  input: z.input<typeof finaliseSchema>,
+): Promise<FinaliseResult> {
+  const parsed = finaliseSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "That time isn't valid." };
+  const { slug, token, start, end } = parsed.data;
+
+  const event = await getEventWithHostHash(slug);
+  if (!event) return { ok: false, error: "This event doesn't exist any more." };
+  if (!isHostToken(token, event.host_token_hash)) return { ok: false, error: NOT_ORGANISER };
+
+  const rangeError = finalRangeError(event, { start, end });
+  if (rangeError) return { ok: false, error: rangeError };
+
+  const final: FinalState = {
+    final_start: start,
+    final_end: end,
+    finalised_at: new Date().toISOString(),
+  };
+  const { error } = await createServerClient().from("events").update(final).eq("id", event.id);
+  if (error) return serverError("finaliseEvent", error);
+  return { ok: true, final };
+}
+
+/** Undo finaliseEvent: open the event for answers again. */
+export async function reopenEvent(input: z.input<typeof hostSchema>): Promise<FinaliseResult> {
+  const parsed = hostSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: NOT_ORGANISER };
+
+  const event = await getEventWithHostHash(parsed.data.slug);
+  if (!event) return { ok: false, error: "This event doesn't exist any more." };
+  if (!isHostToken(parsed.data.token, event.host_token_hash)) {
+    return { ok: false, error: NOT_ORGANISER };
+  }
+
+  const final: FinalState = { final_start: null, final_end: null, finalised_at: null };
+  const { error } = await createServerClient().from("events").update(final).eq("id", event.id);
+  if (error) return serverError("reopenEvent", error);
+  return { ok: true, final };
 }
 
 function serverError(where: string, error: unknown) {

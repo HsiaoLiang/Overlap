@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { ArrowRight, LoaderCircle } from "lucide-react";
 import { createEvent } from "@/app/actions";
 import { DatePicker } from "@/components/create/date-picker";
@@ -28,6 +29,7 @@ export function CreateEventForm() {
 
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const router = useRouter();
 
   const days = dateMode === "dates" ? dates : weekdays;
   const canSubmit = name.trim().length > 0 && days.length > 0 && !isPending;
@@ -36,9 +38,14 @@ export function CreateEventForm() {
     e.preventDefault();
     setError(null);
     startTransition(async () => {
-      // On success the action redirects to the new event page.
       const result = await createEvent({ name, dateMode, days, startMinute, endMinute, timezone });
-      if (result?.error) setError(result.error);
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      // The organiser token travels in the URL fragment (after #), which is
+      // never sent to the server. The event page saves it and removes it.
+      router.push(`/e/${result.slug}#host=${result.hostToken}`);
     });
   }
 

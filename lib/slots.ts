@@ -181,10 +181,13 @@ export function describeRange(
   const endTime = endsAtMidnight ? "24:00" : end.time;
   const nextDay = end.date !== start.date && !endsAtMidnight ? " (+1 day)" : "";
 
-  const minutes = keys.length * SLOT_MINUTES;
+  const duration = formatDuration(keys.length * SLOT_MINUTES);
+  return { day, time: `${start.time}–${endTime}${nextDay}`, duration };
+}
+
+/** 30 → "30 min", 60 → "1 h", 90 → "1 h 30 min" */
+export function formatDuration(minutes: number) {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
-  const duration = h === 0 ? `${m} min` : m === 0 ? `${h} h` : `${h} h ${m} min`;
-
-  return { day, time: `${start.time}–${endTime}${nextDay}`, duration };
+  return h === 0 ? `${m} min` : m === 0 ? `${h} h` : `${h} h ${m} min`;
 }

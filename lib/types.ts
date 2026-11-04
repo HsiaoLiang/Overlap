@@ -16,6 +16,17 @@ export type OverlapEvent = {
   end_minute: number;
   timezone: string;
   created_at: string;
+} & FinalState;
+
+/**
+ * The organiser's final time, or all null while the event is open.
+ * Slot keys in the event's timezone; `final_end` is exclusive.
+ * e.g. "2026-11-19 19:00" → "2026-11-19 20:30", or "wed 19:00" → "wed 20:30".
+ */
+export type FinalState = {
+  final_start: string | null;
+  final_end: string | null;
+  finalised_at: string | null;
 };
 
 /** A participant as the browser sees it (no PIN data). */
@@ -29,4 +40,4 @@ export type Participant = {
 
 /** The event columns that are safe to send to the browser. */
 export const EVENT_COLUMNS =
-  "id, slug, name, date_mode, days, start_minute, end_minute, timezone, created_at";
+  "id, slug, name, date_mode, days, start_minute, end_minute, timezone, created_at, final_start, final_end, finalised_at";
