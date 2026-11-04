@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Analytics } from "@/components/analytics";
 import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { themeScript } from "@/lib/theme";
@@ -40,6 +41,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <ThemeToggle />
         </header>
         <div className="flex flex-1 flex-col">{children}</div>
+        <Analytics />
       </body>
     </html>
   );
