@@ -15,7 +15,6 @@ export default function HomePage() {
       </section>
 
       <section className="rounded-2xl border border-line bg-surface p-5 shadow-sm sm:p-6">
-        <h2 className="mb-6 text-lg font-semibold">New event</h2>
         <CreateEventForm />
       </section>
     </main>

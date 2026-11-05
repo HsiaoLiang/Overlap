@@ -14,7 +14,8 @@ import { GroupPanel } from "@/components/event/group-panel";
 import { JoinForm } from "@/components/event/join-form";
 import { MobileViewTabs, type MobileView } from "@/components/event/mobile-view-tabs";
 import { MyGrid } from "@/components/event/my-grid";
-import { ChooseAnotherTime, OrganiserLinkNotice } from "@/components/event/organiser";
+import { EventHeader } from "@/components/event/event-header";
+import { ChooseAnotherTime, OrganiserButton } from "@/components/event/organiser";
 import { SaveStatus } from "@/components/event/save-status";
 import { TimezoneSelect } from "@/components/timezone-select";
 import { useAutosave } from "@/hooks/use-autosave";
@@ -116,7 +117,7 @@ export function EventView({
 
   // --- Organiser -----------------------------------------------------------
 
-  const { hostToken, linkToSave, dismissLink } = useHost(event.slug);
+  const hostToken = useHost(event.slug);
   const [isOrganising, startOrganising] = useTransition();
   const [organiserError, setOrganiserError] = useState<string | null>(null);
 
@@ -180,8 +181,14 @@ export function EventView({
   });
 
   return (
-    <div className="mt-6 animate-fade-in space-y-4 pb-8 lg:pb-0">
-      {linkToSave && <OrganiserLinkNotice link={linkToSave} onDismiss={dismissLink} />}
+    <div className="animate-fade-in space-y-4 pb-8 lg:pb-0">
+      <EventHeader
+        event={event}
+        isClosed={isClosed}
+        organiserButton={
+          hostToken && <OrganiserButton slug={event.slug} token={hostToken} eventName={event.name} />
+        }
+      />
 
       {finalRange && viewerTimeZone && (
         <FinalBanner
@@ -208,7 +215,7 @@ export function EventView({
         )}
       </div>
 
-      {viewerTimeZone ? (
+      {isClosed ? null : viewerTimeZone ? (
         <BestTimes
           event={event}
           ranges={ranges}

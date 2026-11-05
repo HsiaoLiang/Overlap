@@ -1,20 +1,26 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { CalendarCheck, Check, ChevronDown, Copy, KeyRound, X } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { CalendarCheck, Check, ChevronDown, Copy, KeyRound, Mail, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Field, Select } from "@/components/ui/field";
+import { useClientValue } from "@/hooks/use-client-value";
+import { organiserLink } from "@/hooks/use-host";
 import { finalStartOptions, maxLengthFrom, rangeFrom, type FinalRange } from "@/lib/final";
 import { describeRange, formatDuration } from "@/lib/slots";
 import { SLOT_MINUTES } from "@/lib/time";
 import type { OverlapEvent } from "@/lib/types";
 
 /**
- * Shown once to the organiser, right after the organiser link arrives: the
- * link to keep for managing the event from another device.
+ * The organiser link with ways to keep it somewhere safe. Browsers can forget
+ * site data (iPhone Safari clears it after about 7 days without a visit), so
+ * the reliable place for this link is outside the browser: LINE Keep, Notes,
+ * or your own email.
  */
-export function OrganiserLinkNotice({ link, onDismiss }: { link: string; onDismiss: () => void }) {
+export function OrganiserLinkActions({ link, eventName }: { link: string; eventName: string }) {
   const [copied, setCopied] = useState(false);
+  // The phone's share sheet, where available (LINE Keep, Notes, Messages…).
+  const canShare = useClientValue(() => "share" in navigator) ?? false;
 
   async function copy() {
     try {
@@ -26,48 +32,110 @@ export function OrganiserLinkNotice({ link, onDismiss }: { link: string; onDismi
     }
   }
 
+  async function sendToMyself() {
+    try {
+      await navigator.share({
+        title: `Organiser link · ${eventName}`,
+        text: `My organiser link for “${eventName}”. Keep it private.`,
+        url: link,
+      });
+    } catch {
+      // The share sheet was closed: nothing to do.
+    }
+  }
+
+  function emailToMyself() {
+    const subject = `Organiser link: ${eventName}`;
+    const body = `Keep this private. It lets you manage “${eventName}” on Overlap from any device:\n\n${link}`;
+    window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  }
+
   return (
-    <section
-      aria-labelledby="organiser-link-heading"
-      className="animate-fade-in rounded-2xl border border-accent/40 bg-accent/[0.06] p-4 shadow-sm sm:p-5"
-    >
-      <div className="flex items-start gap-3">
-        <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent">
-          <KeyRound className="size-4" aria-hidden />
-        </div>
-        <div className="min-w-0 flex-1">
-          <h2 id="organiser-link-heading" className="font-semibold">
-            Your organiser link
-          </h2>
-          <p className="mt-0.5 text-sm text-muted">
-            Save this to manage the event from another device. Anyone with this link can close
-            or reopen the event, so keep it to yourself.
-          </p>
-          <div className="mt-3 flex gap-2">
-            <input
-              readOnly
-              value={link}
-              aria-label="Organiser link"
-              onFocus={(e) => e.target.select()}
-              className="h-10 min-w-0 flex-1 rounded-lg border border-line bg-surface px-3 font-mono text-xs text-muted"
-            />
-            <Button variant="secondary" onClick={copy} aria-live="polite">
-              {copied ? <Check className="size-4 text-accent-ink" /> : <Copy className="size-4" />}
-              {copied ? "Copied" : "Copy"}
-            </Button>
-          </div>
-        </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label="Dismiss"
-          onClick={onDismiss}
-          className="-mt-1 -mr-2"
-        >
-          <X className="size-4" />
+    <div className="space-y-3">
+      <input
+        readOnly
+        value={link}
+        aria-label="Organiser link"
+        onFocus={(e) => e.target.select()}
+        className="h-10 w-full min-w-0 rounded-lg border border-line bg-surface px-3 font-mono text-xs text-muted"
+      />
+      <div className="flex flex-wrap gap-2">
+        {canShare ? (
+          <Button onClick={sendToMyself} className="flex-1">
+            <Send className="size-4" /> Send to myself
+          </Button>
+        ) : (
+          <Button onClick={emailToMyself} className="flex-1">
+            <Mail className="size-4" /> Email it to myself
+          </Button>
+        )}
+        <Button variant="secondary" onClick={copy} aria-live="polite" className="flex-1">
+          {copied ? <Check className="size-4 text-accent-ink" /> : <Copy className="size-4" />}
+          {copied ? "Copied" : "Copy"}
         </Button>
       </div>
-    </section>
+      <p className="text-xs text-muted">
+        Save it in LINE Keep, your notes or your email. Anyone with this link can manage the event,
+        so don&apos;t share it with the group.
+      </p>
+    </div>
+  );
+}
+
+/** Organiser only: a button next to Share that shows the organiser link any time. */
+export function OrganiserButton({
+  slug,
+  token,
+  eventName,
+}: {
+  slug: string;
+  token: string;
+  eventName: string;
+}) {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const [link, setLink] = useState("");
+
+  return (
+    <>
+      <Button
+        variant="secondary"
+        onClick={() => {
+          setLink(organiserLink(slug, token));
+          dialogRef.current?.showModal();
+        }}
+      >
+        <KeyRound className="size-4 text-accent-ink" /> Organiser
+      </Button>
+      <dialog
+        ref={dialogRef}
+        aria-labelledby="organiser-title"
+        onClick={(e) => e.target === dialogRef.current && dialogRef.current?.close()}
+        className="m-auto w-[min(26rem,calc(100vw-2rem))] rounded-2xl border border-line bg-surface p-0 text-ink shadow-xl backdrop:bg-black/40 backdrop:backdrop-blur-sm"
+      >
+        <div className="animate-fade-in space-y-4 p-5">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 id="organiser-title" className="font-semibold">
+                Your organiser link
+              </h2>
+              <p className="mt-0.5 text-sm text-muted">
+                Open it on any device to pick the final time or reopen the event.
+              </p>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Close"
+              onClick={() => dialogRef.current?.close()}
+              className="-mt-1 -mr-2"
+            >
+              <X className="size-4" />
+            </Button>
+          </div>
+          {link && <OrganiserLinkActions link={link} eventName={eventName} />}
+        </div>
+      </dialog>
+    </>
   );
 }
 

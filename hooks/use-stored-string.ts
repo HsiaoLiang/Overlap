@@ -13,12 +13,24 @@ function subscribe(onChange: () => void) {
   };
 }
 
-function read(key: string) {
+/** Read a string from localStorage (null if missing or storage is blocked). */
+export function readStoredString(key: string) {
   try {
     return localStorage.getItem(key);
   } catch {
     return null; // storage blocked (private mode, etc.)
   }
+}
+
+/** Save (or with null, remove) a string, and update every component using it. */
+export function writeStoredString(key: string, value: string | null) {
+  try {
+    if (value === null) localStorage.removeItem(key);
+    else localStorage.setItem(key, value);
+  } catch {
+    // Storage blocked: it just won't be remembered next visit.
+  }
+  listeners.forEach((notify) => notify());
 }
 
 /**
@@ -27,20 +39,7 @@ function read(key: string) {
  * updates together, including across tabs.
  */
 export function useStoredString(key: string) {
-  const value = useSyncExternalStore(subscribe, () => read(key), () => null);
-
-  const setValue = useCallback(
-    (next: string | null) => {
-      try {
-        if (next === null) localStorage.removeItem(key);
-        else localStorage.setItem(key, next);
-      } catch {
-        // Storage blocked: it just won't be remembered next visit.
-      }
-      listeners.forEach((notify) => notify());
-    },
-    [key],
-  );
-
+  const value = useSyncExternalStore(subscribe, () => readStoredString(key), () => null);
+  const setValue = useCallback((next: string | null) => writeStoredString(key, next), [key]);
   return [value, setValue] as const;
 }

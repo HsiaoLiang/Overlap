@@ -81,6 +81,15 @@ function slotInstant(key: string, event: EventShape, monday: string) {
   return new TZDate(y, mo - 1, d, h, mi, event.timezone).getTime();
 }
 
+/**
+ * When a slot key starts (ms since 1970, UTC). Weekday keys use the week
+ * containing `now`, in the event's timezone.
+ */
+export function slotStartInstant(event: EventShape, key: string, now = Date.now()) {
+  const monday = event.date_mode === "weekdays" ? referenceMonday(event.timezone, now) : "";
+  return slotInstant(key, event, monday);
+}
+
 // ---------------------------------------------------------------------------
 // The grid a viewer sees
 

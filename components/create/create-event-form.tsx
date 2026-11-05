@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useTransition, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState, useTransition, type FormEvent } from "react";
 import { ArrowRight, LoaderCircle } from "lucide-react";
 import { createEvent } from "@/app/actions";
+import { EventCreated } from "@/components/create/event-created";
 import { DatePicker } from "@/components/create/date-picker";
 import { TimeRangePicker } from "@/components/create/time-range-picker";
 import { WeekdayPicker } from "@/components/create/weekday-picker";
@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { useBrowserTimeZone } from "@/hooks/use-client-value";
+import { saveHostToken } from "@/hooks/use-host";
 import type { DateMode, Weekday } from "@/lib/types";
 
 export function CreateEventForm() {
@@ -29,7 +30,15 @@ export function CreateEventForm() {
 
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  const router = useRouter();
+  const [created, setCreated] = useState<{ slug: string; name: string; hostToken: string } | null>(
+    null,
+  );
+
+  // Bring the "ready" screen into view (the form above it can be long on phones).
+  const topRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (created) topRef.current?.scrollIntoView({ block: "start", behavior: "smooth" });
+  }, [created]);
 
   const days = dateMode === "dates" ? dates : weekdays;
   const canSubmit = name.trim().length > 0 && days.length > 0 && !isPending;
@@ -43,14 +52,23 @@ export function CreateEventForm() {
         setError(result.error);
         return;
       }
-      // The organiser token travels in the URL fragment (after #), which is
-      // never sent to the server. The event page saves it and removes it.
-      router.push(`/e/${result.slug}#host=${result.hostToken}`);
+      // This browser is now the organiser; show both links before moving on.
+      saveHostToken(result.slug, result.hostToken);
+      setCreated({ slug: result.slug, name: name.trim(), hostToken: result.hostToken });
     });
+  }
+
+  if (created) {
+    return (
+      <div ref={topRef} className="scroll-mt-4">
+        <EventCreated {...created} />
+      </div>
+    );
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      <h2 className="text-lg font-semibold">New event</h2>
       <Field label="Event name" htmlFor="event-name">
         <Input
           id="event-name"

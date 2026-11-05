@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { EventHeader } from "@/components/event/event-header";
 import { EventView } from "@/components/event/event-view";
 import { getEvent, getParticipants } from "@/lib/data";
 
@@ -19,7 +18,6 @@ export default async function EventPage({ params }: PageProps<"/e/[slug]">) {
 
   return (
     <main className="mx-auto w-full max-w-6xl px-4 pt-4 pb-16 sm:px-6 sm:pt-8">
-      <EventHeader event={event} />
       <EventView event={event} initialParticipants={participants} />
     </main>
   );
