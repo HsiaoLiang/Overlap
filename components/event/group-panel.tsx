@@ -2,7 +2,7 @@
 
 import { useMemo, useState, type MouseEvent, type PointerEvent } from "react";
 import { Users, X } from "lucide-react";
-import { TimeGrid } from "@/components/event/time-grid";
+import { TimeGrid, type GridPaging } from "@/components/event/time-grid";
 import { freeBySlot, heatStrength } from "@/lib/availability";
 import { cn } from "@/lib/cn";
 import type { ViewerGrid } from "@/lib/slots";
@@ -19,8 +19,10 @@ export function GroupPanel({
   participants,
   meId,
   highlightKeys,
+  paging,
 }: {
   grid: ViewerGrid;
+  paging: GridPaging;
   participants: Participant[];
   meId: string | null;
   /** Slots to outline, e.g. the best time the viewer tapped. */
@@ -104,6 +106,7 @@ export function GroupPanel({
 
       <TimeGrid
         grid={grid}
+        {...paging}
         bodyProps={bodyProps}
         renderCell={({ key, row, col, tabIndex }) => {
           const count = free.get(key)?.length ?? 0;

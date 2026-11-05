@@ -75,6 +75,15 @@ export function EventView({
     return range ? finalRangeKeys(range) : null;
   }, [final]);
 
+  // With many days the grids show a page at a time; both grids share it.
+  const [firstColumn, setFirstColumn] = useState(0);
+  const paging = { firstColumn, onFirstColumnChange: setFirstColumn };
+  /** Turn to the page showing this slot (e.g. a best time the viewer tapped). */
+  function showSlot(key: string) {
+    const col = grid?.cells.map((cells) => cells.indexOf(key)).find((c) => c >= 0);
+    if (col !== undefined) setFirstColumn(col);
+  }
+
   // On phones the two panels become tabs; on wide screens they sit side by side.
   const [mobileTab, setMobileTab] = useState<MobileView>("mine");
 
@@ -119,6 +128,7 @@ export function EventView({
       if (result.ok) {
         setFinal(result.final);
         setSelectedRangeId(null);
+        showSlot(range.start);
       } else {
         setOrganiserError(result.error);
       }
@@ -207,7 +217,10 @@ export function EventView({
           selectedId={selectedRange?.id ?? null}
           onSelect={(id) => {
             setSelectedRangeId(id);
-            if (id) setMobileTab("group"); // show it on the heatmap
+            if (id) {
+              setMobileTab("group"); // show it on the heatmap
+              showSlot(id); // a range's id is its first slot key
+            }
           }}
           onPick={
             hostToken && !isClosed
@@ -244,7 +257,7 @@ export function EventView({
       <div className="grid items-start gap-6 lg:grid-cols-2">
         <section
           className={cn(
-            "rounded-2xl border border-line bg-surface p-3 shadow-sm sm:p-5",
+            "min-w-0 rounded-2xl border border-line bg-surface p-3 shadow-sm sm:p-5",
             mobileTab !== "mine" && "hidden lg:block",
           )}
         >
@@ -274,7 +287,13 @@ export function EventView({
                   }
                 />
               </div>
-              <MyGrid grid={grid} selected={mySlots} onChange={handlePaint} readOnly={isClosed} />
+              <MyGrid
+                grid={grid}
+                selected={mySlots}
+                onChange={handlePaint}
+                readOnly={isClosed}
+                paging={paging}
+              />
               <p className="mt-3 text-center text-xs text-muted">
                 {isClosed
                   ? "The organiser has picked a time, so answers are locked."
@@ -290,7 +309,7 @@ export function EventView({
 
         <section
           className={cn(
-            "rounded-2xl border border-line bg-surface p-3 shadow-sm sm:p-5",
+            "min-w-0 rounded-2xl border border-line bg-surface p-3 shadow-sm sm:p-5",
             mobileTab !== "group" && "hidden lg:block",
           )}
         >
@@ -304,6 +323,7 @@ export function EventView({
               participants={participants}
               meId={me?.id ?? null}
               highlightKeys={selectedRange?.keys ?? finalKeys}
+              paging={paging}
             />
           ) : (
             <GridSkeleton />

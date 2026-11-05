@@ -1,6 +1,6 @@
 "use client";
 
-import { TimeGrid } from "@/components/event/time-grid";
+import { TimeGrid, type GridPaging } from "@/components/event/time-grid";
 import { useDragSelect, type SelectMode } from "@/hooks/use-drag-select";
 import { cn } from "@/lib/cn";
 import type { ViewerGrid } from "@/lib/slots";
@@ -14,8 +14,10 @@ export function MyGrid({
   selected,
   onChange,
   readOnly = false,
+  paging,
 }: {
   grid: ViewerGrid;
+  paging: GridPaging;
   selected: Set<string>;
   onChange: (keys: string[], mode: SelectMode) => void;
   readOnly?: boolean;
@@ -31,6 +33,7 @@ export function MyGrid({
   return (
     <TimeGrid
       grid={grid}
+      {...paging}
       // Read-only: no paint handlers, so touches scroll the page as normal.
       bodyProps={readOnly ? undefined : drag.containerProps}
       renderCell={({ key, row, col, tabIndex }) => {
