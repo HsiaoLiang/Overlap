@@ -101,7 +101,7 @@ export function CreateEventForm() {
         )}
       </div>
 
-      <Field label="Between">
+      <Field label="Between" hint="Type a time like 930 or 21:30, or pick one from the list.">
         <TimeRangePicker
           start={startMinute}
           end={endMinute}

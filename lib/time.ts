@@ -62,3 +62,29 @@ export function timeZoneOffsetLabel(tz: string, at = new Date()) {
   }).formatToParts(at);
   return parts.find((p) => p.type === "timeZoneName")?.value ?? "";
 }
+
+/**
+ * Read a time someone typed, rounded to the nearest half hour.
+ * Accepts "9", "930", "0930", "9:30", "21.30", "2130", "9pm", "9:30 am",
+ * "12am" (midnight) and "24:00". Returns minutes after midnight, or null.
+ */
+export function parseTimeInput(text: string): number | null {
+  const match = /^(\d{1,2})(?:[:.h]?(\d{2}))?(am|pm|a|p)?$/.exec(
+    text.trim().toLowerCase().replace(/\s+/g, ""),
+  );
+  if (!match) return null;
+
+  let hours = Number(match[1]);
+  const minutes = match[2] ? Number(match[2]) : 0;
+  const suffix = match[3];
+  if (minutes > 59) return null;
+  if (suffix) {
+    if (hours < 1 || hours > 12) return null;
+    if (suffix.startsWith("p") && hours !== 12) hours += 12;
+    if (suffix.startsWith("a") && hours === 12) hours = 0;
+  }
+  if (hours > 24 || (hours === 24 && minutes > 0)) return null;
+
+  const total = hours * 60 + minutes;
+  return Math.min(Math.round(total / SLOT_MINUTES) * SLOT_MINUTES, 1440);
+}
