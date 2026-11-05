@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState, type ComponentProps, type KeyboardEvent, type ReactNode } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 import { formatISODate } from "@/lib/dates";
 import type { ViewerGrid } from "@/lib/slots";
@@ -29,7 +27,7 @@ const isISODate = (id: string) => /^\d{4}-\d{2}-\d{2}$/.test(id);
  *
  * Many days: instead of scrolling sideways (hard to discover, and it fights
  * with drag-painting on phones), we show as many days as fit — at most a week —
- * with ‹ › buttons to page through. `firstColumn` is shared by both grids so
+ * with a tab for each week. `firstColumn` is shared by both grids so
  * they page together.
  *
  * The cell body is its own element so the drag-to-paint handlers (and
@@ -53,9 +51,8 @@ export function TimeGrid({
 }) {
   // How wide are we? Decides how many days fit.
   const rootRef = useRef<HTMLDivElement>(null);
+  const tabsRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState<number | null>(null);
-  // Nudge the "next" button until the viewer has turned a page once.
-  const [hasPaged, setHasPaged] = useState(false);
   useEffect(() => {
     const root = rootRef.current;
     if (!root) return;
@@ -65,12 +62,22 @@ export function TimeGrid({
   }, []);
 
   const total = grid.columns.length;
-  const fits = width === null ? total : Math.max(1, Math.floor((width - LABEL_PX) / MIN_COLUMN_PX));
+  // Width 0 means hidden (the other tab on phones): treat it as not measured yet.
+  const fits = !width ? total : Math.max(1, Math.floor((width - LABEL_PX) / MIN_COLUMN_PX));
   const pageSize = total <= fits ? total : Math.min(fits, DAYS_PER_PAGE);
-  const start = Math.min(Math.max(0, firstColumn), total - pageSize);
-  const columnIndexes = Array.from({ length: pageSize }, (_, i) => start + i);
-  const columns = { gridTemplateColumns: `repeat(${pageSize}, minmax(0, 1fr))` };
   const isPaged = pageSize < total;
+
+  // Pages are fixed chunks of `pageSize` days (a week, normally); the last may be shorter.
+  const pageCount = Math.ceil(total / pageSize);
+  const currentPage = Math.min(Math.max(0, Math.floor(firstColumn / pageSize)), pageCount - 1);
+  const start = currentPage * pageSize;
+  const visibleCount = Math.min(pageSize, total - start);
+  const columnIndexes = Array.from({ length: visibleCount }, (_, i) => start + i);
+  // A shorter last page keeps the same column width as the others.
+  const columns = {
+    gridTemplateColumns: `repeat(${visibleCount}, minmax(0, 1fr))`,
+    width: `${(visibleCount / pageSize) * 100}%`,
+  };
 
   // The one cell you reach with Tab: the first one on this page.
   let firstTabbable: [number, number] | null = null;
@@ -96,7 +103,7 @@ export function TimeGrid({
     while (true) {
       row += move[0];
       col += move[1];
-      if (row < 0 || row >= grid.rows.length || col < start || col >= start + pageSize) return;
+      if (row < 0 || row >= grid.rows.length || col < start || col >= start + visibleCount) return;
       const next = e.currentTarget.querySelector<HTMLElement>(
         `[data-row="${row}"][data-col="${col}"]`,
       );
@@ -111,70 +118,76 @@ export function TimeGrid({
   function rangeLabel(from: number, to: number) {
     const a = grid.columns[from];
     const b = grid.columns[to];
-    if (!isISODate(a.id)) return `${a.label} – ${b.label}`;
+    if (!isISODate(a.id)) return from === to ? a.label : `${a.label} – ${b.label}`;
+    const end = formatISODate(b.id, { day: "numeric", month: "short" });
+    if (from === to) return end;
     const sameMonth = a.id.slice(0, 7) === b.id.slice(0, 7);
-    const startText = formatISODate(a.id, sameMonth ? { day: "numeric" } : { day: "numeric", month: "short" });
-    return `${startText} – ${formatISODate(b.id, { day: "numeric", month: "short" })}`;
+    return `${formatISODate(a.id, sameMonth ? { day: "numeric" } : { day: "numeric", month: "short" })} – ${end}`;
   }
 
-  const pageCount = Math.ceil(total / pageSize);
-  const currentPage = start >= total - pageSize ? pageCount - 1 : Math.floor(start / pageSize);
-  const nextStart = Math.min(start + pageSize, total - pageSize);
-  const hasNext = start + pageSize < total;
+  const pages = Array.from({ length: pageCount }, (_, i) => {
+    const from = i * pageSize;
+    const to = Math.min(from + pageSize, total) - 1;
+    return { from, to, days: to - from + 1, range: rangeLabel(from, to) };
+  });
+  // Call the tabs "Week 1, Week 2…" only when each really is at most a week of dates.
+  const isWeekly =
+    pageSize === DAYS_PER_PAGE &&
+    pages.every(({ from, to }) => {
+      const a = grid.columns[from].id;
+      const b = grid.columns[to].id;
+      return isISODate(a) && isISODate(b) && Date.parse(b) - Date.parse(a) <= 6 * 86_400_000;
+    });
 
-  function turnPage(column: number) {
-    setHasPaged(true);
-    onFirstColumnChange(column);
-  }
+  // Keep the selected tab in view when the tab row scrolls (many weeks on a phone).
+  useEffect(() => {
+    const row = tabsRef.current;
+    const tab = row?.querySelector<HTMLElement>('[aria-selected="true"]');
+    if (row && tab) row.scrollLeft = tab.offsetLeft - (row.clientWidth - tab.clientWidth) / 2;
+  }, [currentPage, isPaged]);
 
   return (
     <div ref={rootRef} className="min-w-0">
-      {/* Paging: the next button says what's there ("12 – 18 Nov ›"), page dots
-          show how many pages there are, and the button nudges twice until the
-          viewer has turned a page. */}
+      {/* Many days: one tab per week, so it's obvious how many there are and
+          which one you're looking at. Both grids share the selection. */}
       {isPaged && (
-        <div className="mb-3 flex items-center gap-2">
-          <Button
-            variant="secondary"
-            size="icon"
-            aria-label="Previous days"
-            disabled={start === 0}
-            onClick={() => turnPage(Math.max(0, start - pageSize))}
+        <div className="mb-3">
+          <div
+            ref={tabsRef}
+            role="tablist"
+            aria-label="Days to show"
+            className="flex gap-1 overflow-x-auto rounded-xl bg-subtle p-1 [scrollbar-width:none]"
           >
-            <ChevronLeft className="size-4" />
-          </Button>
-          <div className="flex min-w-0 flex-1 flex-col items-center gap-1">
-            <p className="truncate text-sm font-medium" aria-live="polite">
-              {rangeLabel(start, start + pageSize - 1)}
-            </p>
-            <div className="flex gap-1" aria-label={`Page ${currentPage + 1} of ${pageCount}`} role="img">
-              {Array.from({ length: pageCount }, (_, i) => (
-                <span
-                  key={i}
+            {pages.map((page, i) => {
+              const selected = i === currentPage;
+              const [main, sub] = isWeekly
+                ? [`Week ${i + 1}`, page.range]
+                : [page.range, `${page.days} ${page.days === 1 ? "day" : "days"}`];
+              return (
+                <button
+                  key={page.from}
+                  type="button"
+                  role="tab"
+                  aria-selected={selected}
+                  onClick={() => onFirstColumnChange(page.from)}
                   className={cn(
-                    "h-1.5 rounded-full transition-all",
-                    i === currentPage ? "w-4 bg-accent" : "w-1.5 bg-line-strong",
+                    "min-w-[7.5rem] flex-1 shrink-0 rounded-lg px-3 py-1.5 text-center transition-all",
+                    "focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent",
+                    selected
+                      ? "bg-surface text-ink shadow-sm ring-1 ring-line"
+                      : "text-muted hover:text-ink",
                   )}
-                />
-              ))}
-            </div>
+                >
+                  <span className="block text-sm font-medium whitespace-nowrap">{main}</span>
+                  <span className="block text-xs whitespace-nowrap">{sub}</span>
+                </button>
+              );
+            })}
           </div>
-          {hasNext ? (
-            <Button
-              variant="secondary"
-              size="sm"
-              aria-label={`Next days: ${rangeLabel(nextStart, nextStart + pageSize - 1)}`}
-              onClick={() => turnPage(nextStart)}
-              className={cn("h-8 text-accent-ink", !hasPaged && "animate-nudge")}
-            >
-              {rangeLabel(nextStart, nextStart + pageSize - 1)}
-              <ChevronRight className="size-4" />
-            </Button>
-          ) : (
-            <Button variant="secondary" size="icon" aria-label="Next days" disabled>
-              <ChevronRight className="size-4" />
-            </Button>
-          )}
+          <p className="mt-2 text-center text-xs text-muted" aria-live="polite">
+            This event has {total} days · showing{" "}
+            {isWeekly ? `week ${currentPage + 1}` : pages[currentPage].range}
+          </p>
         </div>
       )}
 
