@@ -1,6 +1,8 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { timeZoneCity } from "@/lib/time";
+import { describeTimeZone } from "@/lib/timezones";
 
 const noSubscribe = () => () => {};
 
@@ -14,6 +16,14 @@ const noSubscribe = () => () => {};
  */
 export function useClientValue<T>(read: () => T): T | null {
   return useSyncExternalStore(noSubscribe, read, () => null);
+}
+
+/**
+ * "Taipei time (GMT+8)". The offset depends on today's date, so it's added in
+ * the browser; the server renders "Taipei time".
+ */
+export function useTimeZoneLabel(tz: string) {
+  return useClientValue(() => describeTimeZone(tz)) ?? `${timeZoneCity(tz)} time`;
 }
 
 export function useBrowserTimeZone() {

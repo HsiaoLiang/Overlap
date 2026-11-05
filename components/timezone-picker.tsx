@@ -3,11 +3,9 @@
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { Check, Globe, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useClientValue } from "@/hooks/use-client-value";
+import { useTimeZoneLabel } from "@/hooks/use-client-value";
 import { cn } from "@/lib/cn";
-import { timeZoneCity } from "@/lib/time";
 import {
-  describeTimeZone,
   POPULAR_TIMEZONES,
   searchTimeZones,
   timeZoneInfo,
@@ -111,9 +109,7 @@ export function TimezonePicker({
     listRef.current?.querySelector('[data-active="true"]')?.scrollIntoView({ block: "nearest" });
   }, [active]);
 
-  // The offset depends on today's date, so it's added in the browser only
-  // (the server pre-renders "Taipei time").
-  const summary = useClientValue(() => describeTimeZone(value)) ?? `${timeZoneCity(value)} time`;
+  const summary = useTimeZoneLabel(value);
 
   return (
     <>

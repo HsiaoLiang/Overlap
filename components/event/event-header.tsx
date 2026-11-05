@@ -1,6 +1,9 @@
+"use client";
+
 import type { ReactNode } from "react";
 import { CalendarCheck, CalendarDays, Clock, Globe } from "lucide-react";
 import { ShareButtons } from "@/components/event/share-buttons";
+import { useTimeZoneLabel } from "@/hooks/use-client-value";
 import { describeDays, describeTimes } from "@/lib/event-summary";
 import type { OverlapEvent } from "@/lib/types";
 
@@ -14,6 +17,9 @@ export function EventHeader({
   /** Shown next to Share, for the organiser only. */
   organiserButton?: ReactNode;
 }) {
+  // The days and times above are in the event's timezone: "Tokyo time (GMT+9)".
+  const timeZone = useTimeZoneLabel(event.timezone);
+
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
       <div className="min-w-0">
@@ -35,7 +41,7 @@ export function EventHeader({
             <Clock className="size-4" aria-hidden /> {describeTimes(event)}
           </li>
           <li className="inline-flex items-center gap-1.5">
-            <Globe className="size-4" aria-hidden /> {event.timezone.replaceAll("_", " ")}
+            <Globe className="size-4" aria-hidden /> {timeZone}
           </li>
         </ul>
       </div>
