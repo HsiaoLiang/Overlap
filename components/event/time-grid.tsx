@@ -54,6 +54,8 @@ export function TimeGrid({
   // How wide are we? Decides how many days fit.
   const rootRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState<number | null>(null);
+  // Nudge the "next" button until the viewer has turned a page once.
+  const [hasPaged, setHasPaged] = useState(false);
   useEffect(() => {
     const root = rootRef.current;
     if (!root) return;
@@ -105,41 +107,74 @@ export function TimeGrid({
     }
   }
 
-  const first = grid.columns[start];
-  const last = grid.columns[start + pageSize - 1];
-  const rangeLabel = isISODate(first.id)
-    ? `${formatISODate(first.id, { day: "numeric", month: "short" })} – ${formatISODate(last.id, { day: "numeric", month: "short" })}`
-    : `${first.label} – ${last.label}`;
+  /** "5 – 11 Nov", "28 Nov – 4 Dec" or "Mon – Sun" for columns from..to. */
+  function rangeLabel(from: number, to: number) {
+    const a = grid.columns[from];
+    const b = grid.columns[to];
+    if (!isISODate(a.id)) return `${a.label} – ${b.label}`;
+    const sameMonth = a.id.slice(0, 7) === b.id.slice(0, 7);
+    const startText = formatISODate(a.id, sameMonth ? { day: "numeric" } : { day: "numeric", month: "short" });
+    return `${startText} – ${formatISODate(b.id, { day: "numeric", month: "short" })}`;
+  }
+
+  const pageCount = Math.ceil(total / pageSize);
+  const currentPage = start >= total - pageSize ? pageCount - 1 : Math.floor(start / pageSize);
+  const nextStart = Math.min(start + pageSize, total - pageSize);
+  const hasNext = start + pageSize < total;
+
+  function turnPage(column: number) {
+    setHasPaged(true);
+    onFirstColumnChange(column);
+  }
 
   return (
     <div ref={rootRef} className="min-w-0">
+      {/* Paging: the next button says what's there ("12 – 18 Nov ›"), page dots
+          show how many pages there are, and the button nudges twice until the
+          viewer has turned a page. */}
       {isPaged && (
-        <div className="mb-3 flex items-center justify-between gap-2">
+        <div className="mb-3 flex items-center gap-2">
           <Button
             variant="secondary"
             size="icon"
             aria-label="Previous days"
             disabled={start === 0}
-            onClick={() => onFirstColumnChange(Math.max(0, start - pageSize))}
+            onClick={() => turnPage(Math.max(0, start - pageSize))}
           >
             <ChevronLeft className="size-4" />
           </Button>
-          <p className="text-center text-sm" aria-live="polite">
-            <span className="font-medium">{rangeLabel}</span>
-            <span className="text-muted">
-              {" "}
-              · {start + 1}–{start + pageSize} of {total} days
-            </span>
-          </p>
-          <Button
-            variant="secondary"
-            size="icon"
-            aria-label="Next days"
-            disabled={start + pageSize >= total}
-            onClick={() => onFirstColumnChange(start + pageSize)}
-          >
-            <ChevronRight className="size-4" />
-          </Button>
+          <div className="flex min-w-0 flex-1 flex-col items-center gap-1">
+            <p className="truncate text-sm font-medium" aria-live="polite">
+              {rangeLabel(start, start + pageSize - 1)}
+            </p>
+            <div className="flex gap-1" aria-label={`Page ${currentPage + 1} of ${pageCount}`} role="img">
+              {Array.from({ length: pageCount }, (_, i) => (
+                <span
+                  key={i}
+                  className={cn(
+                    "h-1.5 rounded-full transition-all",
+                    i === currentPage ? "w-4 bg-accent" : "w-1.5 bg-line-strong",
+                  )}
+                />
+              ))}
+            </div>
+          </div>
+          {hasNext ? (
+            <Button
+              variant="secondary"
+              size="sm"
+              aria-label={`Next days: ${rangeLabel(nextStart, nextStart + pageSize - 1)}`}
+              onClick={() => turnPage(nextStart)}
+              className={cn("h-8 text-accent-ink", !hasPaged && "animate-nudge")}
+            >
+              {rangeLabel(nextStart, nextStart + pageSize - 1)}
+              <ChevronRight className="size-4" />
+            </Button>
+          ) : (
+            <Button variant="secondary" size="icon" aria-label="Next days" disabled>
+              <ChevronRight className="size-4" />
+            </Button>
+          )}
         </div>
       )}
 
