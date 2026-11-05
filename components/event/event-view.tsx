@@ -15,7 +15,7 @@ import { JoinForm } from "@/components/event/join-form";
 import { MobileViewTabs, type MobileView } from "@/components/event/mobile-view-tabs";
 import { MyGrid } from "@/components/event/my-grid";
 import { EventHeader } from "@/components/event/event-header";
-import { ChooseAnotherTime, OrganiserButton } from "@/components/event/organiser";
+import { OrganiserButton, PickFinalTime } from "@/components/event/organiser";
 import { SaveStatus } from "@/components/event/save-status";
 import { TimezoneSelect } from "@/components/timezone-select";
 import { useAutosave } from "@/hooks/use-autosave";
@@ -248,9 +248,15 @@ export function EventView({
       )}
 
       {hostToken && !isClosed && viewerTimeZone && (
-        <ChooseAnotherTime
+        <PickFinalTime
           event={event}
+          participants={participants}
           viewerTimeZone={viewerTimeZone}
+          suggested={
+            ranges[0]
+              ? rangeFrom(ranges[0].keys[0], ranges[0].keys.length * SLOT_MINUTES)
+              : undefined
+          }
           onPick={pickFinal}
           isPicking={isOrganising}
         />

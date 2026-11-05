@@ -1,15 +1,22 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import { CalendarCheck, Check, ChevronDown, Copy, KeyRound, Mail, Send, X } from "lucide-react";
+import { CalendarCheck, Check, Copy, KeyRound, Mail, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Field, Select } from "@/components/ui/field";
 import { useClientValue } from "@/hooks/use-client-value";
 import { organiserLink } from "@/hooks/use-host";
-import { finalStartOptions, maxLengthFrom, rangeFrom, type FinalRange } from "@/lib/final";
+import {
+  attendance,
+  finalRangeKeys,
+  finalStartOptions,
+  maxLengthFrom,
+  rangeFrom,
+  type FinalRange,
+} from "@/lib/final";
 import { describeRange, formatDuration } from "@/lib/slots";
 import { SLOT_MINUTES } from "@/lib/time";
-import type { OverlapEvent } from "@/lib/types";
+import type { OverlapEvent, Participant } from "@/lib/types";
 
 /**
  * The organiser link with ways to keep it somewhere safe. Browsers can forget
@@ -140,17 +147,23 @@ export function OrganiserButton({
 }
 
 /**
- * Organiser only: pick any final time with a start slot and a length,
- * limited to the event's own slots.
+ * Organiser only: the place to decide. Always open and clearly marked, so
+ * organisers find it. Pick one of the best times (their cards have a button)
+ * or any other time here, and see who can make it before confirming.
  */
-export function ChooseAnotherTime({
+export function PickFinalTime({
   event,
+  participants,
   viewerTimeZone,
+  suggested,
   onPick,
   isPicking,
 }: {
   event: OverlapEvent;
+  participants: Participant[];
   viewerTimeZone: string;
+  /** Pre-selects this range (the top best time), if there is one. */
+  suggested?: FinalRange;
   onPick: (range: FinalRange) => void;
   isPicking: boolean;
 }) {
@@ -166,24 +179,44 @@ export function ChooseAnotherTime({
     return [...byDay].map(([day, options]) => ({ day, options }));
   }, [event, viewerTimeZone]);
 
-  const [start, setStart] = useState(() => groups[0].options[0].key);
-  const [minutes, setMinutes] = useState(60);
+  const [start, setStart] = useState(() => suggested?.start ?? groups[0].options[0].key);
+  const [minutes, setMinutes] = useState(() =>
+    suggested ? finalRangeKeys(suggested).length * SLOT_MINUTES : 60,
+  );
   const maxMinutes = maxLengthFrom(event, start);
   const length = Math.min(minutes, maxMinutes);
+  const range = rangeFrom(start, length);
 
   const lengths: number[] = [];
   for (let m = SLOT_MINUTES; m <= maxMinutes; m += SLOT_MINUTES) lengths.push(m);
 
+  // Who can make the time currently selected.
+  const { free, cantMake } = attendance(range, participants);
+
   return (
-    <details className="group rounded-2xl border border-line bg-surface shadow-sm">
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-2 rounded-2xl px-4 py-3 text-sm font-medium focus-visible:outline-2 focus-visible:outline-accent [&::-webkit-details-marker]:hidden">
-        <span className="inline-flex items-center gap-2">
-          <CalendarCheck className="size-4 text-accent-ink" aria-hidden />
-          Choose another time
-        </span>
-        <ChevronDown className="size-4 text-muted transition group-open:rotate-180" aria-hidden />
-      </summary>
-      <div className="grid gap-3 border-t border-line p-4 sm:grid-cols-[1fr_10rem_auto] sm:items-end">
+    <section
+      aria-labelledby="pick-final-heading"
+      className="rounded-2xl border border-accent/40 bg-accent/[0.06] p-4 shadow-sm sm:p-5"
+    >
+      <div className="flex items-start gap-3">
+        <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent">
+          <CalendarCheck className="size-4" aria-hidden />
+        </div>
+        <div className="min-w-0">
+          <h2 id="pick-final-heading" className="flex flex-wrap items-center gap-2 font-semibold">
+            Pick the final time
+            <span className="inline-flex items-center gap-1 rounded-full bg-surface px-2 py-0.5 text-xs font-medium text-accent-ink ring-1 ring-accent/30">
+              <KeyRound className="size-3" aria-hidden /> Only you see this
+            </span>
+          </h2>
+          <p className="mt-0.5 text-sm text-muted">
+            Tap <span className="font-medium text-ink">Pick this time</span> on a best time above,
+            or choose any time here. Everyone sees it straight away, and you can reopen later.
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_10rem_auto] sm:items-end">
         <Field label="Start" htmlFor="final-start">
           <Select id="final-start" value={start} onChange={(e) => setStart(e.target.value)}>
             {groups.map((group) => (
@@ -210,10 +243,27 @@ export function ChooseAnotherTime({
             ))}
           </Select>
         </Field>
-        <Button onClick={() => onPick(rangeFrom(start, length))} disabled={isPicking} className="h-11">
-          Pick this time
+        <Button onClick={() => onPick(range)} disabled={isPicking} className="h-11">
+          <CalendarCheck className="size-4" /> Pick this time
         </Button>
       </div>
-    </details>
+
+      <p className="mt-3 text-sm" aria-live="polite">
+        {participants.length === 0 ? (
+          <span className="text-muted">No one has responded yet.</span>
+        ) : (
+          <>
+            <span className="font-medium">
+              {free.length} of {participants.length} free
+            </span>
+            <span className="text-muted">
+              {cantMake.length === 0
+                ? " · everyone can make it"
+                : ` · can't make it: ${cantMake.map((p) => p.name).join(", ")}`}
+            </span>
+          </>
+        )}
+      </p>
+    </section>
   );
 }
