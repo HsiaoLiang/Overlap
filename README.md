@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <a href="https://overlap-lake.vercel.app"><strong>Try it → overlap-lake.vercel.app</strong></a>
+  <a href="https://overlapping.day"><strong>Try it → overlapping.day</strong></a>
 </p>
 
 <picture>
@@ -22,8 +22,9 @@
 ## How it works
 
 1. **Create an event.** Give it a name, pick specific dates or days of the
-   week, and set a time range. You get a short link like `/e/x7k2pq`, plus a
-   private organiser link for managing the event from any device.
+   week, and set a time range. You get two links: a short one to share, like
+   `/e/x7k2pq`, and a private organiser link. Send the organiser link to
+   yourself (LINE Keep, Notes or email) to manage the event from any device.
 2. **Share the link.** Copy it, show a QR code, or send it straight from your
    phone's share sheet.
 3. **Everyone paints their availability.** Enter a name, then click or drag
@@ -32,18 +33,19 @@
    lists the top three slots and who can't make each one.
 5. **Close the event.** The organiser picks the final time, from Best times or
    any other slot. Everyone instantly sees it in their own timezone, with who's
-   coming, and answers lock. Changed your mind? Reopen it.
+   coming, and adds it to their calendar in one tap. Answers lock; changed your
+   mind? Reopen it.
 
 <table>
   <tr>
     <td width="33%"><img src="docs/screenshots/mobile-create.png" alt="Creating an event on a phone: pick dates on a calendar" /></td>
     <td width="33%"><img src="docs/screenshots/mobile-best-times.png" alt="An event on a phone with the top three best times" /></td>
-    <td width="33%"><img src="docs/screenshots/mobile-group.png" alt="The group heatmap on a phone, showing who is free at 19:00" /></td>
+    <td width="33%"><img src="docs/screenshots/mobile-final.png" alt="The final time on a phone: Thursday 19 November, 19:00 to 20:30, with Add to calendar and who's coming" /></td>
   </tr>
   <tr>
     <td align="center">Create</td>
     <td align="center">Best times</td>
-    <td align="center">Group heatmap</td>
+    <td align="center">Final time</td>
   </tr>
 </table>
 
@@ -58,16 +60,19 @@
 - **Close the event.** The organiser announces the final time with one tap. It
   appears for everyone at once, with who's free and who can't make it, and can
   be reopened if plans change.
+- **Add to calendar.** Google Calendar, Apple Calendar or Outlook, with the
+  event link and who's coming. Weekday events repeat every week.
 - **Live updates.** When someone joins or changes their answers, everyone's
   screen updates instantly.
 - **Every timezone.** Times are shown in each viewer's own timezone, even when
   that splits a day across midnight.
 - **No accounts.** Just a name. Add an optional 4-digit PIN so nobody else can
-  edit your answers.
+  edit your answers. The home page lists the events you've created or joined
+  on this device.
 - **Easy to share.** Copy link, QR code, and link previews for LINE, Slack and
   iMessage (Chinese event names included).
 - **Made for phones.** Mobile-first layout, light and dark mode, and keyboard
-  accessible.
+  accessible. Long events page through a week at a time.
 
 ## Privacy
 
@@ -79,8 +84,8 @@
   trackers.
 - What you type into an event (your name, your availability and an optional
   PIN, stored only as a hash) is used to run that event. Your browser also
-  remembers which participant you are and, if you're the organiser, your
-  organiser token. Both stay on your device.
+  remembers which participant you are, your organiser token if you organise,
+  and your list of events. These stay on your device.
 
 ---
 
@@ -102,6 +107,9 @@ Built with Next.js (App Router) · TypeScript · Tailwind CSS · Supabase
   32-character token; only its SHA-256 hash is stored. It travels in the
   organiser link's fragment (`/e/<slug>#host=…`), which browsers never send to
   the server, and is then kept in localStorage.
+- **Add to calendar** needs no API keys: Google Calendar and Outlook get
+  pre-filled links, and `/e/<slug>/calendar.ics` serves an .ics file for Apple
+  Calendar and others (`lib/calendar.ts`).
 - **Live updates** come from a Postgres trigger that sends a Realtime broadcast
   on `event:<id>` whenever someone joins or saves. Browsers only listen.
 
