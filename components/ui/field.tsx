@@ -14,13 +14,6 @@ const boxedControl = cn(
   "placeholder:text-muted/70 hover:border-line-strong focus:border-accent focus:ring-3 focus:ring-accent/20",
 );
 
-// A compact, borderless control that looks like a link until hovered.
-const ghostControl = cn(
-  baseControl,
-  // field-sizing: the select is only as wide as the chosen option.
-  "h-8 bg-transparent px-2 text-sm font-medium [field-sizing:content] hover:bg-subtle",
-);
-
 /** A label + control + optional hint, stacked. */
 export function Field({
   label,
@@ -49,32 +42,15 @@ export function Input({ className, ...props }: ComponentProps<"input">) {
 }
 
 /** Native <select> (great on mobile) with our styling and a chevron. */
-export function Select({
-  variant = "boxed",
-  className,
-  children,
-  ...props
-}: ComponentProps<"select"> & { variant?: "boxed" | "ghost" }) {
-  const ghost = variant === "ghost";
+export function Select({ className, children, ...props }: ComponentProps<"select">) {
   return (
-    <div className={cn("relative", ghost && "inline-block max-w-full")}>
-      <select
-        className={cn(
-          ghost ? ghostControl : boxedControl,
-          "appearance-none truncate",
-          ghost ? "pr-7" : "pr-9",
-          className,
-        )}
-        {...props}
-      >
+    <div className="relative">
+      <select className={cn(boxedControl, "appearance-none truncate pr-9", className)} {...props}>
         {children}
       </select>
       <ChevronDown
         aria-hidden
-        className={cn(
-          "pointer-events-none absolute top-1/2 size-4 -translate-y-1/2 text-muted",
-          ghost ? "right-2" : "right-3",
-        )}
+        className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-muted"
       />
     </div>
   );

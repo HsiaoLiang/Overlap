@@ -7,7 +7,7 @@ import { EventCreated } from "@/components/create/event-created";
 import { DatePicker } from "@/components/create/date-picker";
 import { TimeRangePicker } from "@/components/create/time-range-picker";
 import { WeekdayPicker } from "@/components/create/weekday-picker";
-import { TimezoneSelect } from "@/components/timezone-select";
+import { TimezonePicker } from "@/components/timezone-picker";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
 import { SegmentedControl } from "@/components/ui/segmented-control";
@@ -114,10 +114,13 @@ export function CreateEventForm() {
 
       <Field
         label="Timezone"
-        htmlFor="timezone"
         hint="Detected automatically. Everyone sees times in their own timezone."
       >
-        <TimezoneSelect id="timezone" value={timezone} onChange={setChosenTimeZone} />
+        <TimezonePicker
+          value={timezone}
+          onChange={setChosenTimeZone}
+          suggestions={browserTimeZone ? [{ id: browserTimeZone, note: "Your timezone" }] : []}
+        />
       </Field>
 
       {error && (

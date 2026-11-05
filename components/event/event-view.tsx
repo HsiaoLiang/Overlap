@@ -17,7 +17,7 @@ import { MyGrid } from "@/components/event/my-grid";
 import { EventHeader } from "@/components/event/event-header";
 import { OrganiserButton, PickFinalTime } from "@/components/event/organiser";
 import { SaveStatus } from "@/components/event/save-status";
-import { TimezoneSelect } from "@/components/timezone-select";
+import { TimezonePicker } from "@/components/timezone-picker";
 import { useAutosave } from "@/hooks/use-autosave";
 import { useBrowserTimeZone } from "@/hooks/use-client-value";
 import type { SelectMode } from "@/hooks/use-drag-select";
@@ -213,11 +213,14 @@ export function EventView({
         <Globe className="size-4" aria-hidden />
         <span>Times shown in</span>
         {viewerTimeZone && (
-          <TimezoneSelect
-            variant="ghost"
-            aria-label="Timezone to show times in"
+          <TimezonePicker
+            variant="inline"
             value={viewerTimeZone}
             onChange={setChosenTimeZone}
+            suggestions={[
+              ...(browserTimeZone ? [{ id: browserTimeZone, note: "Your timezone" }] : []),
+              { id: event.timezone, note: "Event's timezone" },
+            ]}
           />
         )}
       </div>
