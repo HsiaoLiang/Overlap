@@ -35,18 +35,9 @@ export function FinalBanner({
     <section
       aria-labelledby="final-heading"
       aria-live="polite"
-      className="relative animate-fade-in rounded-3xl bg-accent p-5 text-on-accent shadow-lg sm:p-7"
+      className="animate-fade-in rounded-3xl bg-accent p-5 text-on-accent shadow-lg sm:p-7"
     >
-      {/* Two overlapping circles: the Overlap logo, as decoration. Clipped on
-          its own layer, so the calendar menu can still open past the card. */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden rounded-3xl">
-        <svg viewBox="0 0 200 120" className="absolute -top-6 -right-10 w-64 opacity-15 sm:w-80">
-          <circle cx="70" cy="60" r="55" fill="white" />
-          <circle cx="130" cy="60" r="55" fill="white" />
-        </svg>
-      </div>
-
-      <div className="relative">
+      <div>
         <h2 id="final-heading" className="text-xs font-semibold tracking-widest uppercase opacity-80">
           It&apos;s decided · Final time
         </h2>
