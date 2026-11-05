@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { CalendarCheck, Check, Copy, KeyRound, Mail, Send, X } from "lucide-react";
+import { TimeCombobox } from "@/components/create/time-combobox";
 import { Button } from "@/components/ui/button";
 import { Field, Select } from "@/components/ui/field";
 import { useClientValue } from "@/hooks/use-client-value";
@@ -167,25 +168,39 @@ export function PickFinalTime({
   onPick: (range: FinalRange) => void;
   isPicking: boolean;
 }) {
-  // Start options, labelled in the viewer's timezone and grouped by day.
-  const groups = useMemo(() => {
-    const byDay = new Map<string, { key: string; time: string }[]>();
+  // Start options in the viewer's timezone, grouped by day:
+  // { day: "Mon 9 Nov", options: [{ key: "2026-11-09 19:00", minutes: 1140 }, …] }.
+  const days = useMemo(() => {
+    const byDay = new Map<string, { key: string; minutes: number }[]>();
     for (const key of finalStartOptions(event)) {
       const { day, time } = describeRange(event, [key], viewerTimeZone);
+      const minutes = Number(time.slice(0, 2)) * 60 + Number(time.slice(3, 5)); // "19:00–19:30" → 1140
       const options = byDay.get(day) ?? [];
-      options.push({ key, time: time.slice(0, 5) }); // "19:00–19:30" → "19:00"
+      // A clock time can happen twice on the day clocks go back; keep the first.
+      if (!options.some((o) => o.minutes === minutes)) options.push({ key, minutes });
       byDay.set(day, options);
     }
-    return [...byDay].map(([day, options]) => ({ day, options }));
+    return [...byDay].map(([day, options]) => ({
+      day,
+      options: options.sort((a, b) => a.minutes - b.minutes),
+    }));
   }, [event, viewerTimeZone]);
 
-  const [start, setStart] = useState(() => suggested?.start ?? groups[0].options[0].key);
+  const [startKey, setStartKey] = useState(() => suggested?.start ?? days[0].options[0].key);
   const [minutes, setMinutes] = useState(() =>
     suggested ? finalRangeKeys(suggested).length * SLOT_MINUTES : 60,
   );
-  const maxMinutes = maxLengthFrom(event, start);
+  const day = days.find((d) => d.options.some((o) => o.key === startKey)) ?? days[0];
+  const start = day.options.find((o) => o.key === startKey) ?? day.options[0];
+  const maxMinutes = maxLengthFrom(event, start.key);
   const length = Math.min(minutes, maxMinutes);
-  const range = rangeFrom(start, length);
+  const range = rangeFrom(start.key, length);
+
+  function changeDay(label: string) {
+    const next = days.find((d) => d.day === label)!;
+    // Keep the same start time if that day has it, otherwise its first time.
+    setStartKey((next.options.find((o) => o.minutes === start.minutes) ?? next.options[0]).key);
+  }
 
   const lengths: number[] = [];
   for (let m = SLOT_MINUTES; m <= maxMinutes; m += SLOT_MINUTES) lengths.push(m);
@@ -216,19 +231,27 @@ export function PickFinalTime({
         </div>
       </div>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_10rem_auto] sm:items-end">
+      {/* items-start so an error under Start doesn't push the other fields down. */}
+      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-[1fr_8rem_9rem_auto] sm:items-start">
+        <div className="col-span-2 sm:col-span-1">
+          <Field label="Day" htmlFor="final-day">
+            <Select id="final-day" value={day.day} onChange={(e) => changeDay(e.target.value)}>
+              {days.map((d) => (
+                <option key={d.day} value={d.day}>
+                  {d.day}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        </div>
         <Field label="Start" htmlFor="final-start">
-          <Select id="final-start" value={start} onChange={(e) => setStart(e.target.value)}>
-            {groups.map((group) => (
-              <optgroup key={group.day} label={group.day}>
-                {group.options.map((option) => (
-                  <option key={option.key} value={option.key}>
-                    {group.day} · {option.time}
-                  </option>
-                ))}
-              </optgroup>
-            ))}
-          </Select>
+          <TimeCombobox
+            id="final-start"
+            label="Start"
+            value={start.minutes}
+            options={day.options.map((o) => o.minutes)}
+            onChange={(m) => setStartKey(day.options.find((o) => o.minutes === m)!.key)}
+          />
         </Field>
         <Field label="Length" htmlFor="final-length">
           <Select
@@ -243,9 +266,12 @@ export function PickFinalTime({
             ))}
           </Select>
         </Field>
-        <Button onClick={() => onPick(range)} disabled={isPicking} className="h-11">
-          <CalendarCheck className="size-4" /> Pick this time
-        </Button>
+        {/* pt-7 lines the button up with the inputs, below the labels. */}
+        <div className="col-span-2 sm:col-span-1 sm:pt-7">
+          <Button onClick={() => onPick(range)} disabled={isPicking} className="h-11 w-full">
+            <CalendarCheck className="size-4" /> Pick this time
+          </Button>
+        </div>
       </div>
 
       <p className="mt-3 text-sm" aria-live="polite">
