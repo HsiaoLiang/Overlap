@@ -13,6 +13,7 @@ import { Field, Input } from "@/components/ui/field";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { useBrowserTimeZone } from "@/hooks/use-client-value";
 import { saveHostToken } from "@/hooks/use-host";
+import { rememberEvent } from "@/hooks/use-recent-events";
 import type { DateMode, Weekday } from "@/lib/types";
 
 export function CreateEventForm() {
@@ -54,6 +55,7 @@ export function CreateEventForm() {
       }
       // This browser is now the organiser; show both links before moving on.
       saveHostToken(result.slug, result.hostToken);
+      rememberEvent({ slug: result.slug, name: name.trim(), role: "organiser" });
       setCreated({ slug: result.slug, name: name.trim(), hostToken: result.hostToken });
     });
   }

@@ -1,4 +1,5 @@
 import { CreateEventForm } from "@/components/create/create-event-form";
+import { RecentEvents } from "@/components/recent-events";
 
 export default function HomePage() {
   return (
@@ -12,6 +13,7 @@ export default function HomePage() {
           sign-ups, no back-and-forth.
         </p>
         <HeatmapIllustration />
+        <RecentEvents />
       </section>
 
       <section className="rounded-2xl border border-line bg-surface p-5 shadow-sm sm:p-6">

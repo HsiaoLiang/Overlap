@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { Globe, Lock } from "lucide-react";
 import {
   finaliseEvent,
@@ -23,6 +23,7 @@ import { useBrowserTimeZone } from "@/hooks/use-client-value";
 import type { SelectMode } from "@/hooks/use-drag-select";
 import { useEventChannel, type LiveStatus } from "@/hooks/use-event-channel";
 import { useHost } from "@/hooks/use-host";
+import { rememberEvent } from "@/hooks/use-recent-events";
 import { useStoredIdentity } from "@/hooks/use-stored-identity";
 import { bestTimes } from "@/lib/availability";
 import { cn } from "@/lib/cn";
@@ -118,6 +119,12 @@ export function EventView({
   // --- Organiser -----------------------------------------------------------
 
   const hostToken = useHost(event.slug);
+
+  // Remember this event on the home page's "Your events" (this device only).
+  const role = hostToken ? "organiser" : me ? "participant" : "visitor";
+  useEffect(() => {
+    rememberEvent({ slug: event.slug, name: event.name, role });
+  }, [event.slug, event.name, role]);
   const [isOrganising, startOrganising] = useTransition();
   const [organiserError, setOrganiserError] = useState<string | null>(null);
 
