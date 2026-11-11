@@ -11,7 +11,7 @@
   --line: #e4e4e7;
   --line-strong: #d4d4d8;
   --ink: #18181b; /* main text */
-  --muted: #71717a; /* secondary text */
+  --muted: #65656d; /* secondary text (4.5:1 or better on every light surface) */
   --accent: #6e56cf;
   --accent-hover: #5f48c0;
   --accent-ink: #5b45c0; /* accent-coloured text, tuned for contrast */
