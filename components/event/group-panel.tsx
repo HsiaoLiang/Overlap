@@ -199,7 +199,7 @@ function SlotDetails({
   return (
     <div
       aria-live="polite"
-      className="sticky top-2 z-20 min-h-[5.5rem] rounded-xl border border-line bg-surface/95 p-3 text-sm shadow-sm backdrop-blur"
+      className="sticky top-2 z-20 min-h-[5.5rem] rounded-xl bg-subtle/95 p-3 text-sm backdrop-blur"
     >
       {label === null ? (
         <p className="flex h-full min-h-[4rem] items-center justify-center text-center text-muted">

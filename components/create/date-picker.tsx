@@ -54,11 +54,12 @@ export function DatePicker({
   });
 
   if (!today) {
-    return <div className="h-[22rem] animate-pulse rounded-xl border border-line bg-subtle" />;
+    return <div className="h-[20rem] animate-pulse rounded-xl bg-subtle" />;
   }
 
   return (
-    <div className="rounded-xl border border-line bg-surface p-3 shadow-sm sm:p-4">
+    // Sits straight in the form (no box of its own: the form is already a card).
+    <div>
       <div className="mb-3 flex items-center justify-between">
         <Button
           variant="ghost"

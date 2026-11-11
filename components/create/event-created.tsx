@@ -35,7 +35,9 @@ export function EventCreated({
         </div>
       </div>
 
-      <section className="space-y-3 rounded-xl border border-line p-4">
+      {/* This screen sits inside the home page's card, so the two links are
+          separated by a hairline and a tint rather than boxes of their own. */}
+      <section className="space-y-3 border-t border-line pt-5">
         <h3 className="flex items-center gap-2 font-medium">
           <Users className="size-4 text-accent-ink" aria-hidden /> 1. Share with everyone
         </h3>
@@ -46,7 +48,7 @@ export function EventCreated({
         <ShareButtons slug={slug} eventName={name} />
       </section>
 
-      <section className="space-y-3 rounded-xl border border-accent/40 bg-accent/[0.06] p-4">
+      <section className="space-y-3 rounded-xl bg-accent/[0.06] p-4">
         <h3 className="flex items-center gap-2 font-medium">
           <KeyRound className="size-4 text-accent-ink" aria-hidden /> 2. Keep this one to yourself
         </h3>
