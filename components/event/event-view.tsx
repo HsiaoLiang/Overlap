@@ -63,6 +63,9 @@ export function EventView({
   const ranges = useMemo(() => bestTimes(event, participants), [event, participants]);
   const [selectedRangeId, setSelectedRangeId] = useState<string | null>(null);
   const selectedRange = ranges.find((r) => r.id === selectedRangeId) ?? null;
+  // Organiser: the best time last tapped, loaded into "Pick the final time".
+  // `n` changes on every tap so the panel starts over from it.
+  const [preset, setPreset] = useState<{ range: FinalRange; n: number } | null>(null);
 
   // The organiser's final time (null while the event is open). Updates live.
   const [final, setFinal] = useState<FinalState>({
@@ -234,17 +237,21 @@ export function EventView({
           selectedId={selectedRange?.id ?? null}
           onSelect={(id) => {
             setSelectedRangeId(id);
-            if (id) {
-              setMobileTab("group"); // show it on the heatmap
-              showSlot(id); // a range's id is its first slot key
+            const range = ranges.find((r) => r.id === id);
+            if (!range) return;
+            setMobileTab("group"); // show it on the heatmap
+            showSlot(range.id); // a range's id is its first slot key
+            if (hostToken) {
+              const final = rangeFrom(range.keys[0], range.keys.length * SLOT_MINUTES);
+              setPreset((p) => ({ range: final, n: (p?.n ?? 0) + 1 }));
+              const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+              requestAnimationFrame(() =>
+                document
+                  .getElementById("pick-final")
+                  ?.scrollIntoView({ block: "nearest", behavior: reduce ? "auto" : "smooth" }),
+              );
             }
           }}
-          onPick={
-            hostToken && !isClosed
-              ? (range) => pickFinal(rangeFrom(range.keys[0], range.keys.length * SLOT_MINUTES))
-              : undefined
-          }
-          isPicking={isOrganising}
         />
       ) : (
         <div className="h-40 animate-pulse rounded-2xl bg-subtle" />
@@ -252,13 +259,15 @@ export function EventView({
 
       {hostToken && !isClosed && viewerTimeZone && (
         <PickFinalTime
+          key={preset?.n ?? 0}
           event={event}
           participants={participants}
           viewerTimeZone={viewerTimeZone}
           suggested={
-            ranges[0]
+            preset?.range ??
+            (ranges[0]
               ? rangeFrom(ranges[0].keys[0], ranges[0].keys.length * SLOT_MINUTES)
-              : undefined
+              : undefined)
           }
           onPick={pickFinal}
           isPicking={isOrganising}

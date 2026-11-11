@@ -1,7 +1,6 @@
 "use client";
 
-import { CalendarCheck, Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Sparkles } from "lucide-react";
 import type { TimeRange } from "@/lib/availability";
 import { cn } from "@/lib/cn";
 import { describeRange } from "@/lib/slots";
@@ -9,8 +8,8 @@ import type { OverlapEvent, Participant } from "@/lib/types";
 
 /**
  * "Best times" summary: the top ranges where the most people are free.
- * Tapping one highlights it on the group heatmap. The organiser also gets a
- * "Pick this time" button on each card (`onPick`).
+ * Tapping one highlights it on the group heatmap (and, for the organiser,
+ * loads it into "Pick the final time").
  */
 export function BestTimes({
   event,
@@ -19,8 +18,6 @@ export function BestTimes({
   viewerTimeZone,
   selectedId,
   onSelect,
-  onPick,
-  isPicking = false,
 }: {
   event: OverlapEvent;
   ranges: TimeRange[];
@@ -28,9 +25,6 @@ export function BestTimes({
   viewerTimeZone: string;
   selectedId: string | null;
   onSelect: (id: string | null) => void;
-  /** Organiser only: close the event with this range as the final time. */
-  onPick?: (range: TimeRange) => void;
-  isPicking?: boolean;
 }) {
   const total = participants.length;
 
@@ -119,19 +113,6 @@ export function BestTimes({
                       : `Can't make it: ${missing.map((p) => p.name).join(", ")}`}
                   </p>
                 </button>
-                {onPick && (
-                  <div className="border-t border-line px-3 py-2 sm:px-4">
-                    <Button
-                      size="sm"
-                      variant={isBest ? "primary" : "secondary"}
-                      className="w-full"
-                      disabled={isPicking}
-                      onClick={() => onPick(range)}
-                    >
-                      <CalendarCheck className="size-4" /> Pick this time
-                    </Button>
-                  </div>
-                )}
               </li>
             );
           })}

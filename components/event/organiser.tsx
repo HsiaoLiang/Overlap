@@ -163,7 +163,7 @@ export function PickFinalTime({
   event: OverlapEvent;
   participants: Participant[];
   viewerTimeZone: string;
-  /** Pre-selects this range (the top best time), if there is one. */
+  /** Pre-selects this range (the best time last tapped, or the top one). */
   suggested?: FinalRange;
   onPick: (range: FinalRange) => void;
   isPicking: boolean;
@@ -210,6 +210,7 @@ export function PickFinalTime({
 
   return (
     <section
+      id="pick-final"
       aria-labelledby="pick-final-heading"
       className="rounded-2xl border border-accent/40 bg-accent/[0.06] p-4 shadow-sm sm:p-5"
     >
@@ -225,8 +226,8 @@ export function PickFinalTime({
             </span>
           </h2>
           <p className="mt-0.5 text-sm text-muted">
-            Tap <span className="font-medium text-ink">Pick this time</span> on a best time above,
-            or choose any time here. Everyone sees it straight away, and you can reopen later.
+            Tap a best time above to load it here, or choose any time. Everyone sees the final
+            time straight away, and you can reopen later.
           </p>
         </div>
       </div>
