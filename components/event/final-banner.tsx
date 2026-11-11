@@ -39,15 +39,16 @@ export function FinalBanner({
       aria-live="polite"
       className="animate-fade-in rounded-3xl bg-accent p-5 text-on-accent shadow-lg sm:p-7"
     >
+      {/* All text is full-strength white: faded white on the accent drops under 4.5:1. */}
       <div>
-        <h2 id="final-heading" className="text-sm font-medium opacity-80">
+        <h2 id="final-heading" className="text-sm font-medium">
           Final time
         </h2>
         <p className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">{day}</p>
         <p className="mt-1 text-xl sm:text-2xl">
-          {time} <span className="opacity-75">· {duration}</span>
+          {time} · {duration}
         </p>
-        <p className="mt-1 text-sm opacity-75">{timeZone}</p>
+        <p className="mt-1 text-sm">{timeZone}</p>
 
         <div className="mt-5 flex flex-wrap items-center gap-2">
           <AddToCalendar event={event} range={range} participants={participants} />
@@ -56,7 +57,7 @@ export function FinalBanner({
               type="button"
               onClick={onReopen}
               disabled={isBusy}
-              className="inline-flex h-10 items-center gap-2 rounded-lg px-3 text-sm font-medium text-on-accent/90 ring-1 ring-on-accent/40 transition hover:bg-on-accent/10 disabled:opacity-50"
+              className="inline-flex h-10 items-center gap-2 rounded-lg px-3 text-sm font-medium text-on-accent ring-1 ring-on-accent/40 transition hover:bg-on-accent/10 disabled:opacity-50"
             >
               <RotateCcw className="size-4" /> Reopen event
             </button>
@@ -85,9 +86,9 @@ function PeopleList({
 }) {
   return (
     <div>
-      <p className="mb-1.5 text-xs font-medium opacity-80">{label}</p>
+      <p className="mb-1.5 text-xs font-medium">{label}</p>
       {people.length === 0 ? (
-        <p className="opacity-60">—</p>
+        <p>—</p>
       ) : (
         <ul className="flex flex-wrap gap-1.5">
           {people.map((p) => (
@@ -95,7 +96,8 @@ function PeopleList({
               key={p.id}
               className={cn(
                 "rounded-full px-2.5 py-0.5",
-                muted ? "opacity-75 ring-1 ring-on-accent/30 ring-inset" : "bg-on-accent/20",
+                // Coming: solid chips. Can't make it: outlined.
+                muted ? "ring-1 ring-on-accent/50 ring-inset" : "bg-on-accent font-medium text-accent",
               )}
             >
               {p.name}
