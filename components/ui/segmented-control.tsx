@@ -30,7 +30,7 @@ export function SegmentedControl<T extends string>({
             aria-checked={selected}
             onClick={() => onChange(option.value)}
             className={cn(
-              "h-9 rounded-lg px-3 text-sm font-medium transition-all",
+              "h-9 rounded-lg px-3 text-sm font-medium transition-[color,background-color]",
               "focus-visible:outline-2 focus-visible:outline-accent",
               selected
                 ? "bg-surface text-ink shadow-sm ring-1 ring-line"

@@ -108,7 +108,7 @@ export function BestTimes({
                     aria-hidden
                   >
                     <div
-                      className="h-full rounded-full bg-accent transition-[width] duration-500"
+                      className="h-full rounded-full bg-accent"
                       style={{ width: `${(range.free.length / total) * 100}%` }}
                     />
                   </div>

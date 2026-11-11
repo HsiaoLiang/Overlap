@@ -171,7 +171,7 @@ export function TimeGrid({
                   aria-selected={selected}
                   onClick={() => onFirstColumnChange(page.from)}
                   className={cn(
-                    "min-w-[7.5rem] flex-1 shrink-0 rounded-lg px-3 py-1.5 text-center transition-all",
+                    "min-w-[7.5rem] flex-1 shrink-0 rounded-lg px-3 py-1.5 text-center transition-[color,background-color]",
                     "focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent",
                     selected
                       ? "bg-surface text-ink shadow-sm ring-1 ring-line"
