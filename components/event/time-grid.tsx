@@ -204,11 +204,11 @@ export function TimeGrid({
             return (
               <div key={column.id} className="text-center leading-tight whitespace-nowrap">
                 {date && (
-                  <div className={cn("h-3.5 text-[10px] font-semibold text-accent-ink uppercase", !showMonth && "invisible")}>
+                  <div className={cn("h-3.5 text-[11px] leading-3.5 font-semibold text-accent-ink", !showMonth && "invisible")}>
                     {formatISODate(date, { month: "short" })}
                   </div>
                 )}
-                <div className="text-[11px] font-medium text-muted uppercase">{column.label}</div>
+                <div className="text-[11px] font-medium text-muted">{column.label}</div>
                 {day !== null && <div className="text-sm font-medium tabular-nums">{day}</div>}
               </div>
             );

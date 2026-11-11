@@ -193,7 +193,7 @@ export function TimezonePicker({
               <li
                 key={`title-${section.title}`}
                 role="presentation"
-                className="px-3 pt-3 pb-1 text-[11px] font-semibold tracking-wide text-muted uppercase"
+                className="px-3 pt-3 pb-1 text-xs font-medium text-muted"
               >
                 {section.title}
               </li>,

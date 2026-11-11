@@ -2,6 +2,7 @@
 
 import { RotateCcw } from "lucide-react";
 import { AddToCalendar } from "@/components/event/add-to-calendar";
+import { useTimeZoneLabel } from "@/hooks/use-client-value";
 import { attendance, describeFinal, type FinalRange } from "@/lib/final";
 import { cn } from "@/lib/cn";
 import type { OverlapEvent, Participant } from "@/lib/types";
@@ -30,6 +31,7 @@ export function FinalBanner({
 }) {
   const { day, time, duration } = describeFinal(event, range, viewerTimeZone);
   const { free, cantMake } = attendance(range, participants);
+  const timeZone = useTimeZoneLabel(viewerTimeZone);
 
   return (
     <section
@@ -38,14 +40,14 @@ export function FinalBanner({
       className="animate-fade-in rounded-3xl bg-accent p-5 text-on-accent shadow-lg sm:p-7"
     >
       <div>
-        <h2 id="final-heading" className="text-xs font-semibold tracking-widest uppercase opacity-80">
-          It&apos;s decided · Final time
+        <h2 id="final-heading" className="text-sm font-medium opacity-80">
+          Final time
         </h2>
         <p className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">{day}</p>
         <p className="mt-1 text-xl sm:text-2xl">
           {time} <span className="opacity-75">· {duration}</span>
         </p>
-        <p className="mt-1 text-sm opacity-75">{viewerTimeZone.replaceAll("_", " ")} time</p>
+        <p className="mt-1 text-sm opacity-75">{timeZone}</p>
 
         <div className="mt-5 flex flex-wrap items-center gap-2">
           <AddToCalendar event={event} range={range} participants={participants} />
@@ -83,7 +85,7 @@ function PeopleList({
 }) {
   return (
     <div>
-      <p className="mb-1.5 text-xs font-semibold tracking-wide uppercase opacity-80">{label}</p>
+      <p className="mb-1.5 text-xs font-medium opacity-80">{label}</p>
       {people.length === 0 ? (
         <p className="opacity-60">—</p>
       ) : (
