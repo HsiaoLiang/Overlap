@@ -144,7 +144,7 @@ export function TimezonePicker({
         ref={dialogRef}
         aria-labelledby={`${listId}-title`}
         onClick={(e) => e.target === dialogRef.current && dialogRef.current?.close()}
-        className="m-auto max-h-[85dvh] w-[min(28rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-line bg-surface p-0 text-ink shadow-xl backdrop:bg-black/40 backdrop:backdrop-blur-sm max-sm:mt-4 max-sm:mb-auto"
+        className="m-auto max-h-[85dvh] w-[min(28rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-line bg-surface p-0 text-ink shadow-xl backdrop:bg-scrim backdrop:backdrop-blur-sm max-sm:mt-4 max-sm:mb-auto"
       >
         <div className="flex max-h-[85dvh] animate-fade-in flex-col">
           <div className="flex items-center justify-between gap-2 px-4 pt-4">

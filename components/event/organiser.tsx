@@ -118,7 +118,7 @@ export function OrganiserButton({
         ref={dialogRef}
         aria-labelledby="organiser-title"
         onClick={(e) => e.target === dialogRef.current && dialogRef.current?.close()}
-        className="m-auto w-[min(26rem,calc(100vw-2rem))] rounded-2xl border border-line bg-surface p-0 text-ink shadow-xl backdrop:bg-black/40 backdrop:backdrop-blur-sm"
+        className="m-auto w-[min(26rem,calc(100vw-2rem))] rounded-2xl border border-line bg-surface p-0 text-ink shadow-xl backdrop:bg-scrim backdrop:backdrop-blur-sm"
       >
         <div className="animate-fade-in space-y-4 p-5">
           <div className="flex items-start justify-between gap-4">

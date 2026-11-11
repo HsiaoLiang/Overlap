@@ -15,7 +15,8 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image" },
 };
 
-// Colours the browser's address bar on phones to match the page.
+// Colours the browser's address bar on phones to match the page. Same values
+// as --canvas in globals.css (metadata can't read CSS variables).
 export const viewport: Viewport = {
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#fafafa" },

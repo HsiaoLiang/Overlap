@@ -56,14 +56,14 @@ export function FinalBanner({
               type="button"
               onClick={onReopen}
               disabled={isBusy}
-              className="inline-flex h-10 items-center gap-2 rounded-lg px-3 text-sm font-medium text-on-accent/90 ring-1 ring-white/40 transition hover:bg-white/10 disabled:opacity-50"
+              className="inline-flex h-10 items-center gap-2 rounded-lg px-3 text-sm font-medium text-on-accent/90 ring-1 ring-on-accent/40 transition hover:bg-on-accent/10 disabled:opacity-50"
             >
               <RotateCcw className="size-4" /> Reopen event
             </button>
           )}
         </div>
 
-        <div className="mt-5 grid gap-3 border-t border-white/20 pt-4 text-sm sm:grid-cols-2">
+        <div className="mt-5 grid gap-3 border-t border-on-accent/20 pt-4 text-sm sm:grid-cols-2">
           <PeopleList label={`Coming (${free.length})`} people={free} meId={meId} />
           <PeopleList label={`Can't make it (${cantMake.length})`} people={cantMake} meId={meId} muted />
         </div>
@@ -95,7 +95,7 @@ function PeopleList({
               key={p.id}
               className={cn(
                 "rounded-full px-2.5 py-0.5",
-                muted ? "bg-black/15 opacity-75" : "bg-white/20",
+                muted ? "opacity-75 ring-1 ring-on-accent/30 ring-inset" : "bg-on-accent/20",
               )}
             >
               {p.name}

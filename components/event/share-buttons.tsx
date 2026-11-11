@@ -64,7 +64,7 @@ export function ShareButtons({ slug, eventName }: { slug: string; eventName: str
         ref={dialogRef}
         aria-labelledby="share-title"
         onClick={(e) => e.target === dialogRef.current && dialogRef.current?.close()}
-        className="m-auto w-[min(22rem,calc(100vw-2rem))] rounded-2xl border border-line bg-surface p-0 text-ink shadow-xl backdrop:bg-black/40 backdrop:backdrop-blur-sm"
+        className="m-auto w-[min(22rem,calc(100vw-2rem))] rounded-2xl border border-line bg-surface p-0 text-ink shadow-xl backdrop:bg-scrim backdrop:backdrop-blur-sm"
       >
         <div className="animate-fade-in p-5">
           <div className="flex items-start justify-between gap-4">
@@ -85,10 +85,10 @@ export function ShareButtons({ slug, eventName }: { slug: string; eventName: str
             </Button>
           </div>
 
-          {/* QR codes always need dark-on-light to scan reliably, so the box stays white. */}
-          <div className="mx-auto mt-5 w-fit rounded-xl bg-white p-4">
+          {/* QR codes need dark-on-light to scan reliably, so the box stays light in dark mode. */}
+          <div className="mx-auto mt-5 w-fit rounded-xl bg-qr-paper p-4 text-qr-ink">
             {url && (
-              <QRCodeSVG value={url} size={192} level="M" fgColor="#18181b" bgColor="#ffffff" />
+              <QRCodeSVG value={url} size={192} level="M" fgColor="currentColor" bgColor="transparent" />
             )}
           </div>
 

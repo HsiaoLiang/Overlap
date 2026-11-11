@@ -18,6 +18,10 @@
   --heat: #6e56cf; /* heatmap colour (the accent; brighter in dark mode) */
   --on-accent: #ffffff; /* text on accent fills */
   --danger: #dc2626;
+  --scrim: rgb(9 9 11 / 0.4); /* behind dialogs */
+  /* QR codes need dark-on-light to scan, so these stay the same in dark mode. */
+  --qr-ink: #18181b;
+  --qr-paper: #ffffff;
   color-scheme: light;
 }
 
@@ -75,6 +79,9 @@
   --color-accent-ink: var(--accent-ink);
   --color-on-accent: var(--on-accent);
   --color-danger: var(--danger);
+  --color-scrim: var(--scrim);
+  --color-qr-ink: var(--qr-ink);
+  --color-qr-paper: var(--qr-paper);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
