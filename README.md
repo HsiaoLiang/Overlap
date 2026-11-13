@@ -86,6 +86,11 @@
   PIN, stored only as a hash) is used to run that event. Your browser also
   remembers which participant you are, your organiser token if you organise,
   and your list of events. These stay on your device.
+- **Event data is deleted automatically**, with every name, availability and
+  PIN hash in it. An event for specific dates is deleted 30 days after its last
+  date. An event for days of the week has no end date, so it is deleted 90 days
+  after its last activity (it was created, a time was picked, or someone
+  responded). Each event page shows its deletion date.
 
 ---
 

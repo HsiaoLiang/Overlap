@@ -56,3 +56,18 @@ export async function getEventWithHostHash(slug: string) {
   if (error) throw error;
   return data as (OverlapEvent & { host_token_hash: string | null }) | null;
 }
+
+/** When anyone last responded to an event (any participant's `updated_at`), or null. */
+export async function getLastResponseAt(eventId: string): Promise<string | null> {
+  const supabase = createServerClient();
+  const { data, error } = await supabase
+    .from("participants")
+    .select("updated_at")
+    .eq("event_id", eventId)
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw error;
+  return (data?.updated_at as string | undefined) ?? null;
+}

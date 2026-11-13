@@ -27,6 +27,7 @@ import { rememberEvent } from "@/hooks/use-recent-events";
 import { useStoredIdentity } from "@/hooks/use-stored-identity";
 import { bestTimes } from "@/lib/availability";
 import { cn } from "@/lib/cn";
+import { formatISODate } from "@/lib/dates";
 import { finalRangeKeys, finalRangeOf, rangeFrom, type FinalRange } from "@/lib/final";
 import { buildViewerGrid, slotKeys } from "@/lib/slots";
 import { SLOT_MINUTES } from "@/lib/time";
@@ -40,9 +41,12 @@ import type { FinalState, OverlapEvent, Participant } from "@/lib/types";
 export function EventView({
   event,
   initialParticipants,
+  deleteAfter,
 }: {
   event: OverlapEvent;
   initialParticipants: Participant[];
+  /** 'YYYY-MM-DD': the last day the event is kept. */
+  deleteAfter: string;
 }) {
   const [participants, setParticipants] = useState(initialParticipants);
   const [identity, setIdentity] = useStoredIdentity(event.slug);
@@ -362,9 +366,15 @@ export function EventView({
           )}
         </section>
       </div>
+
+      <p className="text-center text-xs text-muted">
+        This event will be deleted after {formatISODate(deleteAfter, DELETE_DATE_FORMAT)}.
+      </p>
     </div>
   );
 }
+
+const DELETE_DATE_FORMAT = { day: "numeric", month: "short", year: "numeric" } as const;
 
 /** Replace a participant by id, or add them if they're new. */
 function upsert(list: Participant[], participant: Participant) {
