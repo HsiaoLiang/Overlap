@@ -212,7 +212,8 @@ export function PickFinalTime({
     <section
       id="pick-final"
       aria-labelledby="pick-final-heading"
-      className="rounded-2xl border border-accent/40 bg-accent/[0.06] p-4 shadow-sm sm:p-5"
+      // Above the cards that follow, so the time list can drop down over them.
+      className="glass relative z-20 rounded-2xl p-4 sm:p-5"
     >
       <div className="flex items-start gap-3">
         <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent">

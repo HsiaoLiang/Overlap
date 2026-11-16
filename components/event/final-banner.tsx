@@ -2,6 +2,7 @@
 
 import { RotateCcw } from "lucide-react";
 import { AddToCalendar } from "@/components/event/add-to-calendar";
+import { PlaceLine } from "@/components/event/place";
 import { useTimeZoneLabel } from "@/hooks/use-client-value";
 import { attendance, describeFinal, type FinalRange } from "@/lib/final";
 import { cn } from "@/lib/cn";
@@ -13,6 +14,7 @@ import type { OverlapEvent, Participant } from "@/lib/types";
  */
 export function FinalBanner({
   event,
+  place,
   range,
   participants,
   meId,
@@ -21,6 +23,8 @@ export function FinalBanner({
   isBusy = false,
 }: {
   event: OverlapEvent;
+  /** Where it happens, if the organiser has said. */
+  place: string | null;
   range: FinalRange;
   participants: Participant[];
   meId: string | null;
@@ -49,9 +53,11 @@ export function FinalBanner({
           {time} · {duration}
         </p>
         <p className="mt-1 text-sm">{timeZone}</p>
+        {place && <PlaceLine place={place} className="mt-3 text-base" />}
 
         <div className="mt-5 flex flex-wrap items-center gap-2">
-          <AddToCalendar event={event} range={range} participants={participants} />
+          {/* The calendar entry takes its location from the event's current place. */}
+          <AddToCalendar event={{ ...event, place }} range={range} participants={participants} />
           {onReopen && (
             <button
               type="button"

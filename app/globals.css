@@ -4,25 +4,36 @@
  * Design tokens. Every colour in the app comes from here, so changing the
  * accent (or tweaking dark mode) is a one-line edit.
  */
+
+/*
+ * The idea: the sky behind the page is the only colour. Everything on top of
+ * it is ink on frosted glass, so it sits well on a blue noon, an orange
+ * sunset and a starry night alike. That's why the accent is the ink itself.
+ */
 :root {
-  --canvas: #fafafa; /* page background */
-  --surface: #ffffff; /* cards */
-  --subtle: #f4f4f5; /* hover fills, empty cells */
+  --canvas: #e9edf2; /* behind the sky, before it loads */
+  --surface: #ffffff; /* inputs, grid cells, dialogs */
+  --subtle: #f0f1f3; /* hover fills, empty cells */
   --line: #e4e4e7;
-  --line-strong: #d4d4d8;
+  --line-strong: #c8c8cf;
   --ink: #18181b; /* main text */
-  --muted: #65656d; /* secondary text (4.5:1 or better on every light surface) */
-  --accent: #6e56cf;
-  --accent-hover: #5f48c0;
-  --accent-ink: #5b45c0; /* accent-coloured text, tuned for contrast */
-  --heat: #6e56cf; /* heatmap colour (the accent; brighter in dark mode) */
+  --muted: #4a4a52; /* secondary text (4.5:1 or better on glass over any sky) */
+  --accent: #18181b; /* buttons, selected things: the ink itself */
+  --accent-hover: #34343a;
+  --accent-ink: #18181b; /* accent-coloured text */
+  --heat: #18181b; /* heatmap colour */
   --on-accent: #ffffff; /* text on accent fills */
   --danger: #dc2626;
   --scrim: rgb(9 9 11 / 0.4); /* behind dialogs */
+  /* Frosted glass: the cards. See the `glass` utility below. */
+  --glass: rgb(255 255 255 / 0.76);
+  --glass-strong: rgb(255 255 255 / 0.88);
+  --glass-line: rgb(255 255 255 / 0.6);
+  --glass-shadow: inset 0 1px 0 rgb(255 255 255 / 0.5), 0 12px 32px -14px rgb(15 23 42 / 0.4);
+  --sky-dim: rgb(0 0 0 / 0); /* laid over the photos (dark mode dims them a little) */
   /* QR codes need dark-on-light to scan, so these stay the same in dark mode. */
   --qr-ink: #18181b;
   --qr-paper: #ffffff;
-  --sky-strength: 42%; /* how much of the sky colour shows through the canvas */
   color-scheme: light;
 }
 
@@ -33,38 +44,46 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --canvas: #09090b;
-    --surface: #131316;
-    --subtle: #1c1c21;
-    --line: #27272a;
-    --line-strong: #3f3f46;
+    --surface: #17171a;
+    --subtle: #222226;
+    --line: #2c2c31;
+    --line-strong: #45454d;
     --ink: #f4f4f5;
-    --muted: #a1a1aa;
-    --accent: #6e56cf;
-    --accent-hover: #7c66d9;
-    --accent-ink: #b1a3f5;
-    --heat: #8f7cf4;
-    --on-accent: #ffffff;
+    --muted: #b4b4bd;
+    --accent: #f4f4f5;
+    --accent-hover: #d4d4d8;
+    --accent-ink: #f4f4f5;
+    --heat: #f4f4f5;
+    --on-accent: #18181b;
     --danger: #f87171;
-    --sky-strength: 55%;
+    --glass: rgb(18 18 22 / 0.78);
+    --glass-strong: rgb(18 18 22 / 0.9);
+    --glass-line: rgb(255 255 255 / 0.1);
+    --glass-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 12px 32px -12px rgb(0 0 0 / 0.7);
+    --sky-dim: rgb(0 0 0 / 0.3);
     color-scheme: dark;
   }
 }
 
 :root[data-theme="dark"] {
   --canvas: #09090b;
-  --surface: #131316;
-  --subtle: #1c1c21;
-  --line: #27272a;
-  --line-strong: #3f3f46;
+  --surface: #17171a;
+  --subtle: #222226;
+  --line: #2c2c31;
+  --line-strong: #45454d;
   --ink: #f4f4f5;
-  --muted: #a1a1aa;
-  --accent: #6e56cf;
-  --accent-hover: #7c66d9;
-  --accent-ink: #b1a3f5;
-  --heat: #8f7cf4;
-  --on-accent: #ffffff;
+  --muted: #b4b4bd;
+  --accent: #f4f4f5;
+  --accent-hover: #d4d4d8;
+  --accent-ink: #f4f4f5;
+  --heat: #f4f4f5;
+  --on-accent: #18181b;
   --danger: #f87171;
-  --sky-strength: 55%;
+  --glass: rgb(18 18 22 / 0.78);
+  --glass-strong: rgb(18 18 22 / 0.9);
+  --glass-line: rgb(255 255 255 / 0.1);
+  --glass-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 12px 32px -12px rgb(0 0 0 / 0.7);
+  --sky-dim: rgb(0 0 0 / 0.3);
   color-scheme: dark;
 }
 
@@ -85,6 +104,8 @@
   --color-scrim: var(--scrim);
   --color-qr-ink: var(--qr-ink);
   --color-qr-paper: var(--qr-paper);
+  --color-on-sky: var(--on-sky);
+  --color-on-sky-muted: var(--on-sky-muted);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -114,10 +135,29 @@ body {
 }
 
 /*
- * The sky: a fixed layer behind every page, tinted by a time of day (blue by
- * day, orange at sunrise and sunset, near-black at night). components/sky.tsx
- * sets the two colours. They're registered as real colours so the browser can
- * transition them: the sky fades to the next time instead of jumping.
+ * Frosted glass: what every card is made of. The sky shows through, blurred,
+ * and the tint keeps text readable whatever is behind it.
+ */
+@utility glass {
+  background-color: var(--glass);
+  border: 1px solid var(--glass-line);
+  box-shadow: var(--glass-shadow);
+  -webkit-backdrop-filter: blur(24px) saturate(1.5);
+  backdrop-filter: blur(24px) saturate(1.5);
+}
+
+/* Browsers that can't blur get a more solid card instead of see-through text. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass {
+    background-color: var(--glass-strong);
+  }
+}
+
+/*
+ * The sky: a fixed layer of photos behind every page, one for each part of
+ * the day. components/sky.tsx fades between them. Until a photo has loaded,
+ * two plain colours for the same time show instead; they're registered as real
+ * colours so the browser can fade those too.
  */
 @property --sky-top {
   syntax: "<color>";
@@ -131,45 +171,140 @@ body {
   initial-value: transparent;
 }
 
+/* Text that sits straight on the sky, and the soft shade behind it. */
+@property --on-sky {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #ffffff;
+}
+
+@property --on-sky-muted {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #ffffff;
+}
+
+@property --on-sky-shade {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
 :root {
+  /* Every sky but one is dark enough for white text… */
+  --on-sky: #ffffff;
+  --on-sky-muted: #f4f4f5;
+  --on-sky-shade: rgb(8 12 28 / 0.55);
+  --sky-night: 0; /* 1 at night, 0 by day: for the stars */
   transition:
     --sky-top 900ms ease,
-    --sky-bottom 900ms ease;
+    --sky-bottom 900ms ease,
+    --on-sky 900ms ease,
+    --on-sky-muted 900ms ease,
+    --on-sky-shade 900ms ease;
 }
 
-/*
- * Text that sits straight on the sky (the page header, an event's title…) can't
- * use the grey or the purple: the sky gets too dark by night, or too bright by
- * day, for them to stay readable. So out there both become the main text
- * colour, and anything with its own surface gets the real ones back.
- */
-:root {
-  --surface-muted: var(--muted);
-  --surface-accent-ink: var(--accent-ink);
-}
-
-body {
-  --muted: var(--ink);
-  --accent-ink: var(--ink);
-}
-
-dialog,
-:is([class^="bg-surface"], [class*=" bg-surface"], [class^="bg-subtle"], [class*=" bg-subtle"]) {
-  --muted: var(--surface-muted);
-  --accent-ink: var(--surface-accent-ink);
+/* …the pale dawn sky takes dark text instead. */
+:root[data-sky-tone="light"] {
+  --on-sky: #18181b;
+  --on-sky-muted: #27272a;
+  --on-sky-shade: rgb(255 255 255 / 0.5);
 }
 
 .sky {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
   z-index: -10;
+  width: 100%;
+  height: 100lvh; /* the tallest the screen gets, so phones never show a gap */
+  overflow: hidden;
   pointer-events: none;
-  /* Mixed into the canvas, so it reads as a translucent wash and text stays legible. */
-  background: linear-gradient(
-    to bottom,
-    color-mix(in oklab, var(--sky-top) var(--sky-strength), var(--canvas)),
-    color-mix(in oklab, var(--sky-bottom) var(--sky-strength), var(--canvas))
+  background: linear-gradient(to bottom, var(--sky-top), var(--sky-bottom));
+}
+
+.sky-photos {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+}
+
+.sky-photo {
+  position: absolute;
+  inset: 0;
+  background-position: center top;
+  background-size: cover;
+  opacity: 0;
+}
+
+.sky::after {
+  position: absolute;
+  inset: 0;
+  background: var(--sky-dim);
+  content: "";
+}
+
+/*
+ * A soft shade behind text that sits on the sky, so a white headline still
+ * reads over a bright cloud. Put it on the text's container.
+ */
+.sky-shade {
+  position: relative;
+  isolation: isolate;
+}
+
+.sky-shade::before {
+  position: absolute;
+  inset: -3.5rem -4rem; /* reaches well past the text, so the blurred edge is clear of it */
+  z-index: -1;
+  border-radius: 4rem;
+  background: var(--on-sky-shade);
+  filter: blur(32px);
+  content: "";
+}
+
+/*
+ * Around the home page's globe: the glow of an atmosphere, and a few stars
+ * that come out at night (--sky-night goes from 0 to 1) and twinkle.
+ */
+.globe-halo {
+  background: radial-gradient(
+    closest-side,
+    rgb(255 255 255 / 0.5),
+    rgb(255 255 255 / 0.16) 62%,
+    transparent
   );
+  filter: blur(18px);
+}
+
+.stars {
+  opacity: var(--sky-night);
+  transition: opacity 1100ms ease;
+}
+
+.stars span {
+  position: absolute;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 0 6px 1px rgb(255 255 255 / 0.7);
+  animation: twinkle 4.6s ease-in-out infinite;
+}
+
+.stars span[data-rhythm="1"] {
+  animation-duration: 6.2s;
+  animation-delay: -2.1s;
+}
+
+.stars span[data-rhythm="2"] {
+  animation-duration: 3.4s;
+  animation-delay: -1.3s;
+}
+
+@keyframes twinkle {
+  50% {
+    opacity: 0.15;
+    transform: scale(0.6);
+  }
 }
 
 /* Respect "reduce motion": keep things instant for people who ask for it. */

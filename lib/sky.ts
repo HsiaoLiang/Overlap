@@ -1,8 +1,12 @@
 /*
- * The colour of the sky at a time of day. The page background is a soft
- * top-to-bottom gradient of these two colours (see components/sky.tsx), so you
- * can read the hour from it: blue by day, orange around sunrise and sunset,
- * near-black at night.
+ * The sky at a time of day. The page background is a photo of the sky
+ * (see components/sky.tsx), so you can read the hour from it: blue by day,
+ * orange around sunrise and sunset, stars at night.
+ *
+ * - `skyPhotos` says which photos to show, and how much of each.
+ * - `skyTone` says whether text on top of the sky should be light or dark.
+ * - `skyAt` gives two plain colours for the same time, shown until the photo
+ *   has loaded.
  */
 
 export type SkyColours = { top: string; bottom: string };
@@ -57,4 +61,49 @@ export function skyAt(minutes: number): SkyColours {
   const to = STOPS[i + 1] ?? { ...STOPS[0], at: DAY };
   const t = (minute - from.at) / (to.at - from.at);
   return { top: mix(from.top, to.top, t), bottom: mix(from.bottom, to.bottom, t) };
+}
+
+// ---------------------------------------------------------------------------
+// Photos
+
+export const SKY_PHOTOS = ["night", "dawn", "day", "sunset", "dusk"] as const;
+export type SkyPhoto = (typeof SKY_PHOTOS)[number];
+export type SkyWeights = Record<SkyPhoto, number>;
+
+/** Which photo the sky shows through the day. Between two stops it fades from one to the next. */
+const PHOTO_STOPS: { at: number; photo: SkyPhoto }[] = [
+  { at: at(0), photo: "night" },
+  { at: at(4, 30), photo: "night" },
+  { at: at(5, 45), photo: "dawn" },
+  { at: at(6, 45), photo: "dawn" },
+  { at: at(8, 30), photo: "day" },
+  { at: at(16), photo: "day" },
+  { at: at(17, 30), photo: "sunset" },
+  { at: at(18, 30), photo: "sunset" },
+  { at: at(19, 30), photo: "dusk" },
+  { at: at(20), photo: "dusk" },
+  { at: at(21), photo: "night" },
+];
+
+/** How much of each photo to show at `minutes` after midnight. Always adds up to 1. */
+export function skyPhotos(minutes: number): SkyWeights {
+  const minute = ((minutes % DAY) + DAY) % DAY;
+  let i = PHOTO_STOPS.length - 1;
+  while (i > 0 && PHOTO_STOPS[i].at > minute) i--;
+  const from = PHOTO_STOPS[i];
+  const to = PHOTO_STOPS[i + 1] ?? { ...PHOTO_STOPS[0], at: DAY };
+  const t = (minute - from.at) / (to.at - from.at);
+
+  const weights: SkyWeights = { night: 0, dawn: 0, day: 0, sunset: 0, dusk: 0 };
+  weights[from.photo] += 1 - t;
+  weights[to.photo] += t;
+  return weights;
+}
+
+/**
+ * Whether the sky is bright or dark where text sits on it. Only the dawn
+ * photo is pale; every other sky takes white text.
+ */
+export function skyTone(minutes: number): "light" | "dark" {
+  return skyPhotos(minutes).dawn >= 0.5 ? "light" : "dark";
 }

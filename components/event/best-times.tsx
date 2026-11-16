@@ -30,13 +30,17 @@ export function BestTimes({
 
   return (
     <section aria-labelledby="best-times-heading">
-      <h2 id="best-times-heading" className="mb-3 flex items-center gap-2 font-semibold">
-        <Sparkles className="size-4 text-accent-ink" aria-hidden />
+      {/* A glass label of its own: small text straight on the sky is hard to read over clouds. */}
+      <h2
+        id="best-times-heading"
+        className="glass mb-2 inline-flex items-center gap-2 rounded-full py-1 pr-3.5 pl-3 text-sm font-semibold"
+      >
+        <Sparkles className="size-4" aria-hidden />
         Best times
       </h2>
 
       {ranges.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-line-strong px-4 py-5 text-center text-sm text-muted">
+        <p className="glass rounded-2xl px-4 py-5 text-center text-sm text-muted">
           {total === 0
             ? "No one has responded yet. Best times will show up here as people add their availability."
             : "No one has marked any times yet."}
@@ -54,14 +58,10 @@ export function BestTimes({
               <li
                 key={range.id}
                 className={cn(
-                  "flex animate-fade-in flex-col overflow-hidden rounded-2xl border shadow-sm transition",
-                  "hover:-translate-y-0.5 hover:shadow-md",
-                  isSelected
-                    ? "border-accent ring-2 ring-accent/30"
-                    : isBest
-                      ? "border-accent/40"
-                      : "border-line",
-                  isBest ? "bg-accent/[0.06]" : "bg-surface",
+                  "glass flex animate-fade-in flex-col overflow-hidden rounded-2xl transition",
+                  "hover:-translate-y-0.5",
+                  // An outline marks the one you picked: glass already uses the border and shadow.
+                  isSelected && "outline-2 -outline-offset-2 outline-accent",
                 )}
               >
                 <button
@@ -74,7 +74,7 @@ export function BestTimes({
                     <span
                       className={cn(
                         "rounded-full px-2 py-0.5 font-medium",
-                        isBest ? "bg-accent text-on-accent" : "bg-subtle text-muted",
+                        isBest ? "bg-accent text-on-accent" : "bg-ink/[0.06] text-muted",
                       )}
                     >
                       {isBest ? "Best" : `#${index + 1}`}
@@ -98,7 +98,7 @@ export function BestTimes({
                   </p>
 
                   <div
-                    className="mt-3 h-1.5 overflow-hidden rounded-full bg-subtle max-sm:hidden"
+                    className="mt-3 h-1.5 overflow-hidden rounded-full bg-ink/10 max-sm:hidden"
                     aria-hidden
                   >
                     <div

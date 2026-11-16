@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Link from "next/link";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@/components/analytics";
 import { Logo } from "@/components/logo";
@@ -20,7 +21,7 @@ export const metadata: Metadata = {
 // as --canvas in globals.css (metadata can't read CSS variables).
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#fafafa" },
+    { media: "(prefers-color-scheme: light)", color: "#e9edf2" },
     { media: "(prefers-color-scheme: dark)", color: "#09090b" },
   ],
 };
@@ -39,11 +40,25 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       </head>
       <body className="flex min-h-full flex-col font-sans">
         <Sky />
-        <header className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
-          <Logo />
-          <ThemeToggle />
+        <header className="mx-auto w-full max-w-6xl px-4 pt-3 sm:px-6 sm:pt-4">
+          <div className="glass flex h-12 items-center justify-between rounded-full pr-2 pl-4">
+            <Logo />
+            <ThemeToggle />
+          </div>
         </header>
-        <div className="flex flex-1 flex-col">{children}</div>
+        {/* Soft glows may reach past the edge: clip them rather than scroll sideways. */}
+        <div className="flex flex-1 flex-col overflow-x-clip">{children}</div>
+        <footer className="flex justify-center px-4 pb-5">
+          <p className="glass rounded-full px-3 py-1 text-xs text-muted">
+            Sky photos from Wikimedia Commons.{" "}
+            <Link
+              href="/credits"
+              className="rounded font-medium text-ink underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-accent"
+            >
+              Photo credits
+            </Link>
+          </p>
+        </footer>
         <Analytics />
       </body>
     </html>

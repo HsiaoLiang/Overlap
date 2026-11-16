@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { skyAt, timeToMinutes } from "./sky";
+import { SKY_PHOTOS, skyAt, skyPhotos, skyTone, timeToMinutes } from "./sky";
 
 /** "oklab(0.64 -0.05 -0.14)" → { l, a, b } */
 function lab(colour: string) {
@@ -58,5 +58,46 @@ describe("skyAt", () => {
   it("wraps times outside one day", () => {
     expect(skyAt(1440 + 720)).toEqual(skyAt(720));
     expect(skyAt(-60)).toEqual(skyAt(1380));
+  });
+});
+
+describe("skyPhotos", () => {
+  const photos = (time: string) => skyPhotos(timeToMinutes(time));
+
+  it("shows one photo in the middle of each part of the day", () => {
+    expect(photos("02:00").night).toBe(1);
+    expect(photos("06:00").dawn).toBe(1);
+    expect(photos("12:00").day).toBe(1);
+    expect(photos("18:00").sunset).toBe(1);
+    expect(photos("19:45").dusk).toBe(1);
+    expect(photos("23:00").night).toBe(1);
+  });
+
+  it("fades between two photos in between", () => {
+    const fading = photos("16:45"); // halfway from day to sunset
+    expect(fading.day).toBeCloseTo(0.5);
+    expect(fading.sunset).toBeCloseTo(0.5);
+    expect(fading.night + fading.dawn + fading.dusk).toBe(0);
+  });
+
+  it("always adds up to one", () => {
+    for (let m = -90; m < 1440 + 90; m += 7) {
+      const total = SKY_PHOTOS.reduce((sum, photo) => sum + skyPhotos(m)[photo], 0);
+      expect(total).toBeCloseTo(1);
+    }
+  });
+
+  it("has no jump at midnight", () => {
+    expect(skyPhotos(1439.999).night).toBeCloseTo(1);
+    expect(skyPhotos(0).night).toBe(1);
+  });
+});
+
+describe("skyTone", () => {
+  it("is light only around dawn", () => {
+    expect(skyTone(timeToMinutes("06:00"))).toBe("light");
+    for (const time of ["00:00", "04:30", "09:00", "12:00", "18:00", "20:00", "23:30"]) {
+      expect(skyTone(timeToMinutes(time))).toBe("dark");
+    }
   });
 });

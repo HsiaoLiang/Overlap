@@ -60,12 +60,18 @@
 - **Close the event.** The organiser announces the final time with one tap. It
   appears for everyone at once, with who's free and who can't make it, and can
   be reopened if plans change.
+- **Where to meet.** The organiser can add a place or a meeting link, when
+  creating the event or any time after. Links are clickable, and places open
+  in Maps.
 - **Add to calendar.** Google Calendar, Apple Calendar or Outlook, with the
-  event link and who's coming. Weekday events repeat every week.
+  event link, the place and who's coming. Weekday events repeat every week.
 - **Live updates.** When someone joins or changes their answers, everyone's
   screen updates instantly.
 - **Every timezone.** Times are shown in each viewer's own timezone, even when
   that splits a day across midnight.
+- **A sky that tells the time.** The background is a photo of the sky for the
+  time of day: stars at night, blue at noon, orange at sunset. Point at a time
+  on the grid, or spin the globe on the home page, and the sky follows.
 - **No accounts.** Just a name. Add an optional 4-digit PIN so nobody else can
   edit your answers. The home page lists the events you've created or joined
   on this device.
@@ -82,10 +88,18 @@
   sent, organiser tokens and event codes are removed from the page address.
 - **Nothing else is tracked.** No other analytics, no ads, no third-party
   trackers.
-- What you type into an event (your name, your availability and an optional
-  PIN, stored only as a hash) is used to run that event. Your browser also
+- What you type into an event (your name, your availability, an optional
+  PIN, stored only as a hash, and the place if the organiser adds one) is used
+  to run that event. Your browser also
   remembers which participant you are, your organiser token if you organise,
   and your list of events. These stay on your device.
+
+## Photo credits
+
+The sky photos are from Wikimedia Commons, by Alexander Kurilov, Basile Morin,
+Dmitry Makeev, Thennicke and Trougnouf, under CC BY 4.0 and CC BY-SA 4.0. The
+full list, with links, is in [`assets/sky/CREDITS.md`](assets/sky/CREDITS.md)
+and on the site at `/credits`.
 
 ---
 
@@ -150,6 +164,7 @@ steps add them:
 - `002_realtime.sql` — live updates (a trigger that broadcasts every join/save)
 - `003_finalise.sql` — organiser token, final time, and a trigger that
   broadcasts when the event is closed or reopened
+- `004_place.sql` — the optional place or meeting link, broadcast when it changes
 
 For weekly numbers (events created, participants, how many events reach 3+
 people or get closed), paste `supabase/queries/stats.sql` into the SQL Editor.

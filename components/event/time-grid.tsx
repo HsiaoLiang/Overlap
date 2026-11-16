@@ -9,7 +9,7 @@ import {
   type PointerEvent,
   type ReactNode,
 } from "react";
-import { setSkyHover } from "@/components/sky";
+import { preloadSky, setSkyHover } from "@/components/sky";
 import { cn } from "@/lib/cn";
 import { formatISODate } from "@/lib/dates";
 import { timeToMinutes } from "@/lib/sky";
@@ -145,7 +145,10 @@ export function TimeGrid({
     },
     onFocus: (e: { target: Element }) => showSkyFor(e.target),
   };
-  useEffect(() => () => setSkyHover(null), []);
+  useEffect(() => {
+    preloadSky(); // the sky is about to change a lot: fetch every photo now
+    return () => setSkyHover(null);
+  }, []);
 
   /** "5 – 11 Nov", "28 Nov – 4 Dec" or "Mon – Sun" for columns from..to. */
   function rangeLabel(from: number, to: number) {

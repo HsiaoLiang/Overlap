@@ -124,7 +124,7 @@ export function TimezonePicker({
             <Globe className="size-4 shrink-0 text-muted" aria-hidden />
             <span className="truncate">{summary}</span>
           </span>
-          <span className="shrink-0 text-sm font-medium text-accent-ink">Change</span>
+          <span className="shrink-0 text-sm font-medium text-ink underline underline-offset-2">Change</span>
         </button>
       ) : (
         <span className="inline-flex flex-wrap items-center gap-1">
@@ -133,7 +133,7 @@ export function TimezonePicker({
           <button
             type="button"
             onClick={open}
-            className="rounded font-medium text-accent-ink underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-accent"
+            className="rounded font-medium text-ink underline underline-offset-2 hover:decoration-2 focus-visible:outline-2 focus-visible:outline-accent"
           >
             Change
           </button>

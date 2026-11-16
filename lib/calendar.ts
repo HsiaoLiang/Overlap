@@ -18,12 +18,14 @@ export type CalendarEntry = {
   /** Weekday events ("Wednesdays 19:00") repeat every week. */
   weekly: boolean;
   description: string;
+  /** Where it happens (a place or a meeting link), if the organiser added one. */
+  location: string | null;
   url: string;
 };
 
 type EventShape = Pick<
   OverlapEvent,
-  "id" | "name" | "date_mode" | "days" | "start_minute" | "end_minute" | "timezone"
+  "id" | "name" | "date_mode" | "days" | "start_minute" | "end_minute" | "timezone" | "place"
 >;
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -61,6 +63,7 @@ export function calendarEntry(
     end: start + length,
     weekly: event.date_mode === "weekdays",
     description,
+    location: event.place,
     url: eventUrl,
   };
 }
@@ -77,6 +80,7 @@ export function googleCalendarUrl(entry: CalendarEntry) {
     dates: `${utcStamp(entry.start)}/${utcStamp(entry.end)}`,
     details: entry.description,
   });
+  if (entry.location) params.set("location", entry.location);
   if (entry.weekly) params.set("recur", "RRULE:FREQ=WEEKLY");
   return `https://calendar.google.com/calendar/render?${params}`;
 }
@@ -91,6 +95,7 @@ export function outlookCalendarUrl(entry: CalendarEntry) {
     enddt: new Date(entry.end).toISOString(),
     body: entry.description,
   });
+  if (entry.location) params.set("location", entry.location);
   return `https://outlook.live.com/calendar/0/deeplink/compose?${params}`;
 }
 
@@ -147,6 +152,7 @@ export function toICS(entry: CalendarEntry, now = Date.now()) {
     ...(entry.weekly ? ["RRULE:FREQ=WEEKLY"] : []),
     `SUMMARY:${escapeText(entry.title)}`,
     `DESCRIPTION:${escapeText(entry.description)}`,
+    ...(entry.location ? [`LOCATION:${escapeText(entry.location)}`] : []),
     `URL:${entry.url}`,
     "END:VEVENT",
     "END:VCALENDAR",

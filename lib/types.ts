@@ -15,6 +15,8 @@ export type OverlapEvent = {
   /** Exclusive. 1260 = the last slot is 20:30–21:00. */
   end_minute: number;
   timezone: string;
+  /** Where it happens: a place, a meeting link, or null. See lib/place.ts. */
+  place: string | null;
   created_at: string;
 } & FinalState;
 
@@ -40,4 +42,4 @@ export type Participant = {
 
 /** The event columns that are safe to send to the browser. */
 export const EVENT_COLUMNS =
-  "id, slug, name, date_mode, days, start_minute, end_minute, timezone, created_at, final_start, final_end, finalised_at";
+  "id, slug, name, date_mode, days, start_minute, end_minute, timezone, place, created_at, final_start, final_end, finalised_at";

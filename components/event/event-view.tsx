@@ -17,13 +17,14 @@ import { MobileViewTabs, type MobileView } from "@/components/event/mobile-view-
 import { MyGrid } from "@/components/event/my-grid";
 import { EventHeader } from "@/components/event/event-header";
 import { OrganiserButton, PickFinalTime } from "@/components/event/organiser";
+import { PlaceEditor } from "@/components/event/place";
 import { SaveStatus } from "@/components/event/save-status";
 import { setSkyBase } from "@/components/sky";
 import { TimezonePicker } from "@/components/timezone-picker";
 import { useAutosave } from "@/hooks/use-autosave";
 import { useBrowserTimeZone } from "@/hooks/use-client-value";
 import type { SelectMode } from "@/hooks/use-drag-select";
-import { useEventChannel, type LiveStatus } from "@/hooks/use-event-channel";
+import { useEventChannel, type EventUpdate, type LiveStatus } from "@/hooks/use-event-channel";
 import { useHost } from "@/hooks/use-host";
 import { rememberEvent } from "@/hooks/use-recent-events";
 import { useStoredIdentity } from "@/hooks/use-stored-identity";
@@ -97,6 +98,9 @@ export function EventView({
   });
   const finalRange = finalRangeOf(final);
   const isClosed = finalRange !== null;
+
+  // Where it happens. The organiser can add or change it at any time; updates live.
+  const [place, setPlace] = useState(event.place);
   const finalKeys = useMemo(() => {
     const range = finalRangeOf(final);
     return range ? finalRangeKeys(range) : null;
@@ -213,11 +217,18 @@ export function EventView({
       return upsert(snapshot.participants, mine);
     });
     setFinal(snapshot.final);
+    setPlace(snapshot.place);
+  }
+
+  /** The organiser closed or reopened the event, or changed where it is. */
+  function handleEventUpdate({ place: newPlace, ...newFinal }: EventUpdate) {
+    setFinal(newFinal);
+    if (newPlace !== undefined) setPlace(newPlace);
   }
 
   const liveStatus = useEventChannel(event.id, {
     onParticipant: handleRemoteParticipant,
-    onFinalChange: setFinal, // the organiser closed or reopened the event
+    onFinalChange: handleEventUpdate,
     onResync: resync,
   });
 
@@ -225,15 +236,45 @@ export function EventView({
     <div className="animate-fade-in space-y-4 pb-8 lg:pb-0">
       <EventHeader
         event={event}
+        place={place}
         isClosed={isClosed}
         organiserButton={
           hostToken && <OrganiserButton slug={event.slug} token={hostToken} eventName={event.name} />
+        }
+        placeEditor={
+          hostToken && (
+            <PlaceEditor slug={event.slug} token={hostToken} place={place} onSaved={setPlace} />
+          )
+        }
+        footer={
+          <div className="flex items-center gap-2 text-sm text-muted">
+            {viewerTimeZone ? (
+              <Globe timeZone={viewerTimeZone} size={GLOBE_PX} />
+            ) : (
+              <GlobePlaceholder />
+            )}
+            <div className="flex min-w-0 flex-wrap items-center gap-1">
+              <span>Times shown in</span>
+              {viewerTimeZone && (
+                <TimezonePicker
+                  variant="inline"
+                  value={viewerTimeZone}
+                  onChange={setChosenTimeZone}
+                  suggestions={[
+                    ...(browserTimeZone ? [{ id: browserTimeZone, note: "Your timezone" }] : []),
+                    { id: event.timezone, note: "Event's timezone" },
+                  ]}
+                />
+              )}
+            </div>
+          </div>
         }
       />
 
       {finalRange && viewerTimeZone && (
         <FinalBanner
           event={event}
+          place={place}
           range={finalRange}
           participants={participants}
           meId={meId}
@@ -242,24 +283,6 @@ export function EventView({
           isBusy={isOrganising}
         />
       )}
-
-      <div className="flex items-center gap-2 text-sm text-muted">
-        {viewerTimeZone ? <Globe timeZone={viewerTimeZone} size={GLOBE_PX} /> : <GlobePlaceholder />}
-        <div className="flex min-w-0 flex-wrap items-center gap-1">
-          <span>Times shown in</span>
-          {viewerTimeZone && (
-            <TimezonePicker
-              variant="inline"
-              value={viewerTimeZone}
-              onChange={setChosenTimeZone}
-              suggestions={[
-                ...(browserTimeZone ? [{ id: browserTimeZone, note: "Your timezone" }] : []),
-                { id: event.timezone, note: "Event's timezone" },
-              ]}
-            />
-          )}
-        </div>
-      </div>
 
       {isClosed ? null : viewerTimeZone ? (
         <BestTimes
@@ -287,7 +310,7 @@ export function EventView({
           }}
         />
       ) : (
-        <div className="h-40 animate-pulse rounded-2xl bg-subtle" />
+        <div className="glass h-40 animate-pulse rounded-2xl" />
       )}
 
       {hostToken && !isClosed && viewerTimeZone && (
@@ -322,7 +345,7 @@ export function EventView({
       <div className="grid items-start gap-6 lg:grid-cols-2">
         <section
           className={cn(
-            "min-w-0 rounded-2xl border border-line bg-surface p-3 shadow-sm sm:p-5",
+            "glass min-w-0 rounded-2xl p-3 sm:p-5",
             mobileTab !== "mine" && "hidden lg:block",
           )}
         >
@@ -374,7 +397,7 @@ export function EventView({
 
         <section
           className={cn(
-            "min-w-0 rounded-2xl border border-line bg-surface p-3 shadow-sm sm:p-5",
+            "glass min-w-0 rounded-2xl p-3 sm:p-5",
             mobileTab !== "group" && "hidden lg:block",
           )}
         >

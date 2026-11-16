@@ -7,6 +7,13 @@ import type { FinalState, Participant } from "@/lib/types";
 export type LiveStatus = "connecting" | "live" | "offline";
 
 /**
+ * What an "event" message carries: the final time, and where it happens.
+ * `place` is missing if the database is still on the older trigger
+ * (see supabase/migrations/004_place.sql).
+ */
+export type EventUpdate = FinalState & { place?: string | null };
+
+/**
  * Listen for changes to an event: its participants and its final time.
  *
  * Database triggers broadcast on the channel `event:<id>`: every join or save
@@ -23,7 +30,7 @@ export function useEventChannel(
     onResync,
   }: {
     onParticipant: (participant: Participant) => void;
-    onFinalChange: (final: FinalState) => void;
+    onFinalChange: (update: EventUpdate) => void;
     onResync: () => void;
   },
 ) {
@@ -46,7 +53,7 @@ export function useEventChannel(
         handleParticipant(payload as Participant);
       })
       .on("broadcast", { event: "event" }, ({ payload }) => {
-        handleFinalChange(payload as FinalState);
+        handleFinalChange(payload as EventUpdate);
       })
       .subscribe((state) => {
         if (state === "SUBSCRIBED") {

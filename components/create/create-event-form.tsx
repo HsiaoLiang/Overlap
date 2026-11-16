@@ -13,7 +13,9 @@ import { Field, Input } from "@/components/ui/field";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { useBrowserTimeZone } from "@/hooks/use-client-value";
 import { saveHostToken } from "@/hooks/use-host";
+import { setStageTimeZone } from "@/hooks/use-stage-time-zone";
 import { rememberEvent } from "@/hooks/use-recent-events";
+import { PLACE_MAX_LENGTH } from "@/lib/place";
 import type { DateMode, Weekday } from "@/lib/types";
 
 export function CreateEventForm() {
@@ -28,6 +30,12 @@ export function CreateEventForm() {
   const browserTimeZone = useBrowserTimeZone();
   const [chosenTimeZone, setChosenTimeZone] = useState<string | null>(null);
   const timezone = chosenTimeZone ?? browserTimeZone ?? "UTC";
+  // The big globe on the home page turns to face this timezone.
+  useEffect(() => {
+    setStageTimeZone(chosenTimeZone);
+    return () => setStageTimeZone(null);
+  }, [chosenTimeZone]);
+  const [place, setPlace] = useState("");
 
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -48,7 +56,15 @@ export function CreateEventForm() {
     e.preventDefault();
     setError(null);
     startTransition(async () => {
-      const result = await createEvent({ name, dateMode, days, startMinute, endMinute, timezone });
+      const result = await createEvent({
+        name,
+        dateMode,
+        days,
+        startMinute,
+        endMinute,
+        timezone,
+        place,
+      });
       if (!result.ok) {
         setError(result.error);
         return;
@@ -120,6 +136,21 @@ export function CreateEventForm() {
           value={timezone}
           onChange={setChosenTimeZone}
           suggestions={browserTimeZone ? [{ id: browserTimeZone, note: "Your timezone" }] : []}
+        />
+      </Field>
+
+      <Field
+        label="Where (optional)"
+        htmlFor="event-place"
+        hint="A place or a meeting link. You can add or change it later."
+      >
+        <Input
+          id="event-place"
+          value={place}
+          onChange={(e) => setPlace(e.target.value)}
+          placeholder="Café name, address or meet.google.com/…"
+          maxLength={PLACE_MAX_LENGTH}
+          autoComplete="off"
         />
       </Field>
 

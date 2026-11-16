@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { offsetMinutes, timeZoneCoords } from "./timezone-coords";
+import { nearestCity, offsetMinutes, timeZoneCoords } from "./timezone-coords";
 
 describe("offsetMinutes", () => {
   it("reads offset labels", () => {
@@ -34,5 +34,18 @@ describe("timeZoneCoords", () => {
   it("never leaves the map", () => {
     // Kiritimati is GMT+14, which would be 210° east.
     expect(timeZoneCoords("Pacific/Kiritimati").lon).toBe(180);
+  });
+});
+
+describe("nearestCity", () => {
+  it("finds the city at a longitude", () => {
+    expect(nearestCity(139)).toBe("Asia/Tokyo");
+    expect(nearestCity(0)).toBe("Europe/London");
+    expect(nearestCity(-74)).toBe("America/New_York");
+  });
+
+  it("goes the short way round the date line", () => {
+    // 179°W is 6° from Auckland (174.76°E), not 354°.
+    expect(nearestCity(-179)).toBe("Pacific/Auckland");
   });
 });

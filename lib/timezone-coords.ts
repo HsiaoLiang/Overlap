@@ -9,7 +9,7 @@ import { timeZoneOffsetLabel } from "./time";
 
 export type Coords = { lat: number; lon: number; exact: boolean };
 
-const CITIES: Record<string, [lat: number, lon: number]> = {
+export const CITY_COORDS: Record<string, [lat: number, lon: number]> = {
   "Asia/Taipei": [25.03, 121.57],
   "Asia/Tokyo": [35.68, 139.69],
   "Asia/Seoul": [37.57, 126.98],
@@ -53,9 +53,21 @@ export function offsetMinutes(label: string) {
 }
 
 export function timeZoneCoords(id: string, now = new Date()): Coords {
-  const city = CITIES[id];
+  const city = CITY_COORDS[id];
   if (city) return { lat: city[0], lon: city[1], exact: true };
   // 15° per hour east of Greenwich, at a latitude most people live near.
   const lon = (offsetMinutes(timeZoneOffsetLabel(id, now)) / 60) * 15;
   return { lat: 25, lon: Math.max(-180, Math.min(180, lon)), exact: false };
+}
+
+/** The known city closest to a longitude (going round the world the short way). */
+export function nearestCity(lon: number): string {
+  const apart = (a: number, b: number) => Math.abs(((a - b + 540) % 360) - 180);
+  let best = "";
+  let bestGap = Infinity;
+  for (const [id, [, cityLon]] of Object.entries(CITY_COORDS)) {
+    const gap = apart(lon, cityLon);
+    if (gap < bestGap) [best, bestGap] = [id, gap];
+  }
+  return best;
 }

@@ -11,6 +11,7 @@ import {
   type ParticipantRow,
 } from "@/lib/participants";
 import { hashPin } from "@/lib/pin";
+import { normalisePlace, PLACE_MAX_LENGTH } from "@/lib/place";
 import { slotKeys } from "@/lib/slots";
 import { createServerClient } from "@/lib/supabase/server";
 import { generateSlug } from "@/lib/slug";
@@ -29,6 +30,8 @@ import {
  * browser, even though our own form already validates.
  */
 
+const placeSchema = z.string().max(PLACE_MAX_LENGTH * 2, "Keep the place under 200 characters.");
+
 const createEventSchema = z
   .object({
     name: z.string().trim().min(1, "Give your event a name.").max(100, "That name is too long."),
@@ -37,6 +40,7 @@ const createEventSchema = z
     startMinute: z.number().int().min(0).max(1410).multipleOf(30),
     endMinute: z.number().int().min(30).max(1440).multipleOf(30),
     timezone: z.string().refine(isValidTimeZone, "Unknown timezone."),
+    place: placeSchema.optional(),
   })
   .refine((e) => e.startMinute < e.endMinute, "The end time must be after the start time.")
   .refine(
@@ -65,7 +69,7 @@ export async function createEvent(input: CreateEventInput): Promise<CreateEventR
       error: parsed.error.issues[0]?.message ?? "Something's not right with the form.",
     };
   }
-  const { name, dateMode, days, startMinute, endMinute, timezone } = parsed.data;
+  const { name, dateMode, days, startMinute, endMinute, timezone, place } = parsed.data;
 
   // Store days de-duplicated and in order, so every reader can rely on that.
   const sortedDays =
@@ -88,6 +92,7 @@ export async function createEvent(input: CreateEventInput): Promise<CreateEventR
       start_minute: startMinute,
       end_minute: endMinute,
       timezone,
+      place: normalisePlace(place),
       host_token_hash: host.hash,
     });
 
@@ -214,16 +219,17 @@ export async function saveAvailability(input: z.input<typeof saveSchema>): Promi
 // ---------------------------------------------------------------------------
 // Reloading (used after a realtime reconnect)
 
-/** An event's current participants and final time, or null if it doesn't exist. */
+/** An event's current participants, final time and place, or null if it doesn't exist. */
 export async function loadEventSnapshot(
   slug: string,
-): Promise<{ participants: Participant[]; final: FinalState } | null> {
+): Promise<{ participants: Participant[]; final: FinalState; place: string | null } | null> {
   const event = await getEvent(z.string().max(20).parse(slug));
   if (!event) return null;
   const { final_start, final_end, finalised_at } = event;
   return {
     participants: await getParticipants(event.id),
     final: { final_start, final_end, finalised_at },
+    place: event.place,
   };
 }
 
@@ -293,6 +299,29 @@ export async function reopenEvent(input: z.input<typeof hostSchema>): Promise<Fi
   const { error } = await createServerClient().from("events").update(final).eq("id", event.id);
   if (error) return serverError("reopenEvent", error);
   return { ok: true, final };
+}
+
+const placeUpdateSchema = hostSchema.extend({ place: placeSchema });
+
+export type PlaceResult = { ok: true; place: string | null } | { ok: false; error: string };
+
+/** Set, change or remove (empty text) where the event happens. */
+export async function updatePlace(input: z.input<typeof placeUpdateSchema>): Promise<PlaceResult> {
+  const parsed = placeUpdateSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "That place isn't valid." };
+  }
+
+  const event = await getEventWithHostHash(parsed.data.slug);
+  if (!event) return { ok: false, error: "This event doesn't exist any more." };
+  if (!isHostToken(parsed.data.token, event.host_token_hash)) {
+    return { ok: false, error: NOT_ORGANISER };
+  }
+
+  const place = normalisePlace(parsed.data.place);
+  const { error } = await createServerClient().from("events").update({ place }).eq("id", event.id);
+  if (error) return serverError("updatePlace", error);
+  return { ok: true, place };
 }
 
 function serverError(where: string, error: unknown) {

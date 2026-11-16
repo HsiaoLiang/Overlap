@@ -10,6 +10,7 @@ const dinner = {
   start_minute: 17 * 60,
   end_minute: 22 * 60,
   timezone: "Asia/Taipei",
+  place: null as string | null,
 };
 const range = { start: "2026-11-19 19:00", end: "2026-11-19 20:30" };
 const person = (name: string, slots: string[]): Participant => ({ id: name, name, slots, hasPin: false });
@@ -69,6 +70,20 @@ describe("calendar links and files", () => {
     expect(ics.replace(/\r\n /g, "")).toContain(
       `DESCRIPTION:Event page: ${url}\\nComing: Alex\\nCan't make it: Bea`,
     );
+  });
+
+  it("leaves the location out when the event has no place", () => {
+    expect(new URL(googleCalendarUrl(entry)).searchParams.get("location")).toBeNull();
+    expect(new URL(outlookCalendarUrl(entry)).searchParams.get("location")).toBeNull();
+    expect(toICS(entry)).not.toContain("LOCATION");
+  });
+
+  it("passes the place on as the location", () => {
+    const place = "Blue Bottle, 信義; 2F";
+    const withPlace = calendarEntry({ ...dinner, place }, range, people, url);
+    expect(new URL(googleCalendarUrl(withPlace)).searchParams.get("location")).toBe(place);
+    expect(new URL(outlookCalendarUrl(withPlace)).searchParams.get("location")).toBe(place);
+    expect(toICS(withPlace)).toContain("LOCATION:Blue Bottle\\, 信義\\; 2F\r\n");
   });
 
   it("adds a weekly rule for weekday events", () => {
