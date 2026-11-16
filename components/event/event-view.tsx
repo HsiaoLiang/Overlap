@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { Globe, Lock } from "lucide-react";
+import dynamic from "next/dynamic";
+import { Globe as GlobeIcon, Lock } from "lucide-react";
 import {
   finaliseEvent,
   loadEventSnapshot,
@@ -17,6 +18,7 @@ import { MyGrid } from "@/components/event/my-grid";
 import { EventHeader } from "@/components/event/event-header";
 import { OrganiserButton, PickFinalTime } from "@/components/event/organiser";
 import { SaveStatus } from "@/components/event/save-status";
+import { setSkyBase } from "@/components/sky";
 import { TimezonePicker } from "@/components/timezone-picker";
 import { useAutosave } from "@/hooks/use-autosave";
 import { useBrowserTimeZone } from "@/hooks/use-client-value";
@@ -28,9 +30,29 @@ import { useStoredIdentity } from "@/hooks/use-stored-identity";
 import { bestTimes } from "@/lib/availability";
 import { cn } from "@/lib/cn";
 import { finalRangeKeys, finalRangeOf, rangeFrom, type FinalRange } from "@/lib/final";
-import { buildViewerGrid, slotKeys } from "@/lib/slots";
+import { timeToMinutes } from "@/lib/sky";
+import { buildViewerGrid, slotKeys, slotStartInstant, zonedParts } from "@/lib/slots";
 import { SLOT_MINUTES } from "@/lib/time";
 import type { FinalState, OverlapEvent, Participant } from "@/lib/types";
+
+const GLOBE_PX = 64;
+
+function GlobePlaceholder() {
+  return (
+    <span
+      className="inline-flex shrink-0 items-center justify-center"
+      style={{ width: GLOBE_PX, height: GLOBE_PX }}
+    >
+      <GlobeIcon className="size-5" aria-hidden />
+    </span>
+  );
+}
+
+// The 3D globe draws with WebGL, so it loads in the browser only, after the page.
+const Globe = dynamic(() => import("@/components/globe"), {
+  ssr: false,
+  loading: GlobePlaceholder,
+});
 
 /**
  * The interactive part of the event page. Holds the list of participants
@@ -79,6 +101,15 @@ export function EventView({
     const range = finalRangeOf(final);
     return range ? finalRangeKeys(range) : null;
   }, [final]);
+
+  // Once a time is picked, the page's sky rests on it (in the viewer's timezone).
+  const finalStart = final.final_start;
+  useEffect(() => {
+    if (!finalStart || !viewerTimeZone) return;
+    const { time } = zonedParts(slotStartInstant(event, finalStart), viewerTimeZone);
+    setSkyBase(timeToMinutes(time));
+    return () => setSkyBase(null);
+  }, [event, finalStart, viewerTimeZone]);
 
   // With many days the grids show a page at a time; both grids share it.
   const [firstColumn, setFirstColumn] = useState(0);
@@ -212,20 +243,22 @@ export function EventView({
         />
       )}
 
-      <div className="flex flex-wrap items-center gap-1 text-sm text-muted">
-        <Globe className="size-4" aria-hidden />
-        <span>Times shown in</span>
-        {viewerTimeZone && (
-          <TimezonePicker
-            variant="inline"
-            value={viewerTimeZone}
-            onChange={setChosenTimeZone}
-            suggestions={[
-              ...(browserTimeZone ? [{ id: browserTimeZone, note: "Your timezone" }] : []),
-              { id: event.timezone, note: "Event's timezone" },
-            ]}
-          />
-        )}
+      <div className="flex items-center gap-2 text-sm text-muted">
+        {viewerTimeZone ? <Globe timeZone={viewerTimeZone} size={GLOBE_PX} /> : <GlobePlaceholder />}
+        <div className="flex min-w-0 flex-wrap items-center gap-1">
+          <span>Times shown in</span>
+          {viewerTimeZone && (
+            <TimezonePicker
+              variant="inline"
+              value={viewerTimeZone}
+              onChange={setChosenTimeZone}
+              suggestions={[
+                ...(browserTimeZone ? [{ id: browserTimeZone, note: "Your timezone" }] : []),
+                { id: event.timezone, note: "Event's timezone" },
+              ]}
+            />
+          )}
+        </div>
       </div>
 
       {isClosed ? null : viewerTimeZone ? (

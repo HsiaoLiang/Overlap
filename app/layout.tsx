@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@/components/analytics";
 import { Logo } from "@/components/logo";
+import { Sky } from "@/components/sky";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { themeScript } from "@/lib/theme";
 import "./globals.css";
@@ -37,6 +38,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className="flex min-h-full flex-col font-sans">
+        <Sky />
         <header className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
           <Logo />
           <ThemeToggle />
