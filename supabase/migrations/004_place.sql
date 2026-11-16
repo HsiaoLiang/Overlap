@@ -4,7 +4,7 @@
 -- 1. A place or a meeting link, set by the organiser when creating the event
 --    or any time after. Free text: "Blue Bottle, Xinyi" or "https://meet…".
 alter table public.events add column place text;
-alter table public.events add constraint events_place_length check (char_length(place) <= 200);
+alter table public.events add constraint events_place_length check (char_length(place) <= 2048);
 
 -- 2. Live updates: send the place along with the final time, and also when
 --    only the place changes (see 003_finalise.sql for the original).

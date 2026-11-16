@@ -13,8 +13,17 @@ describe("normalisePlace", () => {
     expect(normalisePlace(undefined)).toBeNull();
   });
 
-  it("cuts very long text", () => {
-    expect(normalisePlace("a".repeat(500))).toHaveLength(PLACE_MAX_LENGTH);
+  it("preserves a long meeting URL and its access parameters", () => {
+    const url = `https://teams.microsoft.com/l/meetup-join/${"a".repeat(300)}?context=tenant-id`;
+    expect(normalisePlace(url)).toBe(url);
+    expect(placeParts(normalisePlace(url)!)[0].href).toBe(url);
+  });
+
+  it("preserves a URL at the supported length without cutting its final token", () => {
+    const prefix = "https://meet.example/join?token=";
+    const url = prefix + "a".repeat(PLACE_MAX_LENGTH - prefix.length);
+    expect(normalisePlace(url)).toBe(url);
+    expect(placeParts(url)[0].href).toBe(url);
   });
 });
 
@@ -40,6 +49,35 @@ describe("placeParts", () => {
       { text: "Room 3, or " },
       { text: "meet.example/abc", href: "https://meet.example/abc" },
       { text: "." },
+    ]);
+  });
+
+  it("keeps Chinese sentence punctuation outside the URL", () => {
+    expect(placeParts("線上：https://meet.google.com/abc-defg-hij，晚上見。")).toEqual([
+      { text: "線上：" },
+      { text: "meet.google.com/abc-defg-hij", href: "https://meet.google.com/abc-defg-hij" },
+      { text: "，晚上見。" },
+    ]);
+    expect(placeParts("meet.google.com/abc-defg-hij。")).toEqual([
+      { text: "meet.google.com/abc-defg-hij", href: "https://meet.google.com/abc-defg-hij" },
+      { text: "。" },
+    ]);
+  });
+
+  it("preserves balanced parentheses while stripping enclosing sentence delimiters", () => {
+    const url = "https://en.wikipedia.org/wiki/Test_(assessment)";
+    expect(placeParts(`See (${url}).`)).toEqual([
+      { text: "See (" },
+      { text: "en.wikipedia.org/wiki/Test_(assessment)", href: url },
+      { text: ")." },
+    ]);
+  });
+
+  it("finds later links after a bare meeting domain", () => {
+    expect(placeParts("meet.example/a or https://zoom.example/b")).toEqual([
+      { text: "meet.example/a", href: "https://meet.example/a" },
+      { text: " or " },
+      { text: "zoom.example/b", href: "https://zoom.example/b" },
     ]);
   });
 

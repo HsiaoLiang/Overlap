@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
-import { Geist, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import { Analytics } from "@/components/analytics";
 import { Logo } from "@/components/logo";
 import { Sky } from "@/components/sky";
@@ -8,12 +8,13 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { themeScript } from "@/lib/theme";
 import "./globals.css";
 
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
+const geistSans = localFont({ src: "../assets/fonts/Geist-Latin.woff2", variable: "--font-geist-sans", display: "swap", weight: "100 900" });
+const geistMono = localFont({ src: "../assets/fonts/GeistMono-Latin.woff2", variable: "--font-geist-mono", display: "swap", weight: "100 900", preload: false });
 
 export const metadata: Metadata = {
-  title: { default: "Overlap — find a time that works", template: "%s · Overlap" },
-  description: "Create an event, share the link, and see when everyone is free. No sign-ups.",
+  metadataBase: new URL(process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://overlapping.day"),
+  title: { default: "Overlap — find your shared moment", template: "%s · Overlap" },
+  description: "Different schedules. Different time zones. Find a little room for everyone. Create a free event, share a link, and find your shared moment.",
   twitter: { card: "summary_large_image" },
 };
 
@@ -21,8 +22,8 @@ export const metadata: Metadata = {
 // as --canvas in globals.css (metadata can't read CSS variables).
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#e9edf2" },
-    { media: "(prefers-color-scheme: dark)", color: "#09090b" },
+    { media: "(prefers-color-scheme: light)", color: "#f5f2ec" },
+    { media: "(prefers-color-scheme: dark)", color: "#101c27" },
   ],
 };
 
@@ -38,22 +39,24 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body className="flex min-h-full flex-col font-sans">
+      <body className="site-shell flex min-h-full flex-col font-sans">
+        <a href="#main-content" className="skip-link">Skip to content</a>
         <Sky />
-        <header className="mx-auto w-full max-w-6xl px-4 pt-3 sm:px-6 sm:pt-4">
-          <div className="glass flex h-12 items-center justify-between rounded-full pr-2 pl-4">
+        <header className="site-header">
+          <div className="site-nav">
             <Logo />
-            <ThemeToggle />
+            <div className="site-nav-right"><span className="nav-note">A little closer, wherever you are.</span><ThemeToggle /></div>
           </div>
         </header>
         {/* Soft glows may reach past the edge: clip them rather than scroll sideways. */}
-        <div className="flex flex-1 flex-col overflow-x-clip">{children}</div>
-        <footer className="flex justify-center px-4 pb-5">
-          <p className="glass rounded-full px-3 py-1 text-xs text-muted">
-            Sky photos from Wikimedia Commons.{" "}
+        <div id="main-content" tabIndex={-1} className="flex flex-1 flex-col overflow-x-clip outline-none">{children}</div>
+        <footer className="site-footer">
+          <span>Made for the moments in between.</span>
+          <p>
+            A shared sky.{" "}
             <Link
               href="/credits"
-              className="rounded font-medium text-ink underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-accent"
+              className="rounded underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-accent"
             >
               Photo credits
             </Link>

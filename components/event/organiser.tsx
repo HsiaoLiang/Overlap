@@ -213,7 +213,7 @@ export function PickFinalTime({
       id="pick-final"
       aria-labelledby="pick-final-heading"
       // Above the cards that follow, so the time list can drop down over them.
-      className="glass relative z-20 rounded-2xl p-4 sm:p-5"
+      className="workspace-panel relative z-20 scroll-mt-5 rounded-3xl p-4 sm:p-6"
     >
       <div className="flex items-start gap-3">
         <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent">
@@ -221,14 +221,13 @@ export function PickFinalTime({
         </div>
         <div className="min-w-0">
           <h2 id="pick-final-heading" className="flex flex-wrap items-center gap-2 font-semibold">
-            Pick the final time
+            Confirm the plan
             <span className="inline-flex items-center gap-1 rounded-full bg-surface px-2 py-0.5 text-xs font-medium text-accent-ink ring-1 ring-accent/30">
-              <KeyRound className="size-3" aria-hidden /> Only you see this
+              <KeyRound className="size-3" aria-hidden /> Organiser controls
             </span>
           </h2>
           <p className="mt-0.5 text-sm text-muted">
-            Tap a best time above to load it here, or choose any time. Everyone sees the final
-            time straight away, and you can reopen later.
+            Choose the best overlap above, or set a different time here. Confirm when you’re ready; everyone will see the final plan.
           </p>
         </div>
       </div>
@@ -271,7 +270,7 @@ export function PickFinalTime({
         {/* pt-7 lines the button up with the inputs, below the labels. */}
         <div className="col-span-2 sm:col-span-1 sm:pt-7">
           <Button onClick={() => onPick(range)} disabled={isPicking} className="h-11 w-full">
-            <CalendarCheck className="size-4" /> Pick this time
+            <CalendarCheck className="size-4" /> Confirm this time
           </Button>
         </div>
       </div>

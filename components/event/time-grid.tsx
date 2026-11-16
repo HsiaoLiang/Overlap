@@ -6,13 +6,10 @@ import {
   useState,
   type ComponentProps,
   type KeyboardEvent,
-  type PointerEvent,
   type ReactNode,
 } from "react";
-import { preloadSky, setSkyHover } from "@/components/sky";
 import { cn } from "@/lib/cn";
 import { formatISODate } from "@/lib/dates";
-import { timeToMinutes } from "@/lib/sky";
 import type { ViewerGrid } from "@/lib/slots";
 
 const ARROWS: Record<string, [number, number]> = {
@@ -124,32 +121,6 @@ export function TimeGrid({
     }
   }
 
-  // The page's sky follows the time under the pointer, finger or keyboard focus.
-  function showSkyFor(element: Element | null) {
-    const cell = element?.closest<HTMLElement>("[data-row][data-col]");
-    const row = cell && rootRef.current?.contains(cell) ? grid.rows[Number(cell.dataset.row)] : null;
-    if (row) setSkyHover(timeToMinutes(row.time));
-  }
-  const skyProps = {
-    onPointerOver: (e: PointerEvent) => {
-      if (e.pointerType === "mouse") showSkyFor(e.target as Element);
-    },
-    onPointerDown: (e: PointerEvent) => showSkyFor(e.target as Element),
-    // While painting, the pointer is captured by the grid, so look up the cell under it.
-    onPointerMove: (e: PointerEvent) => {
-      if (e.buttons !== 0) showSkyFor(document.elementFromPoint(e.clientX, e.clientY));
-    },
-    // The mouse left: back to the resting sky. A tap stays until the next one.
-    onPointerLeave: (e: PointerEvent) => {
-      if (e.pointerType === "mouse") setSkyHover(null);
-    },
-    onFocus: (e: { target: Element }) => showSkyFor(e.target),
-  };
-  useEffect(() => {
-    preloadSky(); // the sky is about to change a lot: fetch every photo now
-    return () => setSkyHover(null);
-  }, []);
-
   /** "5 – 11 Nov", "28 Nov – 4 Dec" or "Mon – Sun" for columns from..to. */
   function rangeLabel(from: number, to: number) {
     const a = grid.columns[from];
@@ -227,7 +198,7 @@ export function TimeGrid({
         </div>
       )}
 
-      <div className="grid grid-cols-[2.5rem_1fr]" {...skyProps}>
+      <div className="grid grid-cols-[2.5rem_1fr]">
         {/* Header row: weekday + day number. The month appears on the first
             day shown and wherever a new month starts, so labels never wrap. */}
         <div />

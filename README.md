@@ -5,7 +5,7 @@
 <h1 align="center">Overlap</h1>
 
 <p align="center">
-  <strong>Find the time that works for everyone.</strong><br />
+  <strong>Find your shared moment.</strong><br />
   Share a link, paint your free time, and see when the whole group overlaps — live.<br />
   No sign-ups, no back-and-forth.
 </p>
@@ -69,9 +69,15 @@
   screen updates instantly.
 - **Every timezone.** Times are shown in each viewer's own timezone, even when
   that splits a day across midnight.
-- **A sky that tells the time.** The background is a photo of the sky for the
-  time of day: stars at night, blue at noon, orange at sunset. Point at a time
-  on the grid, or spin the globe on the home page, and the sky follows.
+- **A shared moment, made visible.** The home page has a labelled interactive
+  example: slide one instant across London, New York and Taipei, then find
+  the hour when everyone is free. It is separate from your real events.
+- **A sky that tells the time.** The background follows the selected timezone.
+  Preview a suggested time explicitly, or let the final plan set the sky.
+  Painting availability keeps the workspace steady.
+- **A calm workspace.** Personal availability is teal; group overlap uses
+  sunlight gold. The best suggestion leads, alternatives expand on demand,
+  and a confirmed plan puts its time, place and calendar actions first.
 - **No accounts.** Just a name. Add an optional 4-digit PIN so nobody else can
   edit your answers. The home page lists the events you've created or joined
   on this device.
@@ -107,6 +113,9 @@ and on the site at `/credits`.
 
 Built with Next.js (App Router) · TypeScript · Tailwind CSS · Supabase
 (Postgres + Realtime) · deployed on Vercel.
+
+The [shared-moment design notes](docs/shared-moment.md) cover the interactive
+example, workspace states, local fonts, rollout and verification.
 
 ### How it fits together
 
@@ -165,6 +174,8 @@ steps add them:
 - `003_finalise.sql` — organiser token, final time, and a trigger that
   broadcasts when the event is closed or reopened
 - `004_place.sql` — the optional place or meeting link, broadcast when it changes
+- `005_place_length.sql` — allow complete meeting links up to 2,048 characters;
+  run this before deploying the updated app if 004 was already applied
 
 For weekly numbers (events created, participants, how many events reach 3+
 people or get closed), paste `supabase/queries/stats.sql` into the SQL Editor.

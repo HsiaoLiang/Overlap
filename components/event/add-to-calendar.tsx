@@ -39,7 +39,7 @@ export function AddToCalendar({
 
   return (
     <details ref={menuRef} className="group relative">
-      <summary className="inline-flex h-10 cursor-pointer list-none items-center gap-2 rounded-lg bg-on-accent px-4 text-sm font-medium text-accent shadow-sm transition hover:bg-on-accent/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-on-accent [&::-webkit-details-marker]:hidden">
+      <summary className="inline-flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-xl bg-accent px-4 text-sm font-medium text-on-accent shadow-sm transition hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent [&::-webkit-details-marker]:hidden">
         <CalendarPlus className="size-4" aria-hidden /> Add to calendar
         <ChevronDown className="size-4 transition group-open:rotate-180" aria-hidden />
       </summary>

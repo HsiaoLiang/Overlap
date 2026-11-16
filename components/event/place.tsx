@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition, type FormEvent } from "react";
-import { LoaderCircle, MapPin, Pencil, Plus, Video, X } from "lucide-react";
+import { ArrowUpRight, LoaderCircle, MapPin, Pencil, Plus, Video, X } from "lucide-react";
 import { updatePlace } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
@@ -18,13 +18,21 @@ const linkClass =
 export function PlaceLine({ place, className }: { place: string; className?: string }) {
   const online = isOnlyLink(place);
   const Icon = online ? Video : MapPin;
+  const parts = placeParts(place);
+  const soleLink = online ? parts[0].href : undefined;
+  const host = soleLink ? new URL(soleLink).hostname.replace(/^www\./, "") : "";
+  const meeting = /(^|\.)(zoom\.us|meet\.google\.com|teams\.microsoft\.com|teams\.live\.com|meet\.jit\.si)$/.test(host);
 
   return (
     <p className={cn("flex min-w-0 items-start gap-1.5", className)}>
       <Icon className="mt-0.5 size-4 shrink-0" aria-hidden />
-      <span className="min-w-0 break-words">
+      <span className="min-w-0 [overflow-wrap:anywhere]">
         <span className="sr-only">{online ? "Meeting link: " : "Where: "}</span>
-        {placeParts(place).map((part, i) =>
+        {soleLink ? (
+          <a href={soleLink} target="_blank" rel="noopener noreferrer nofollow" title={soleLink} className={cn(linkClass, "inline-flex max-w-full flex-wrap items-center gap-x-2 gap-y-1")}>
+            <span>{meeting ? "Join meeting" : "Open link"}</span><span className="text-xs font-normal text-muted">{host}</span><ArrowUpRight className="size-3.5 shrink-0" aria-hidden />
+          </a>
+        ) : parts.map((part, i) =>
           part.href ? (
             // Typed by the organiser, so: a new tab, and no passing on of this page's address.
             <a key={i} href={part.href} target="_blank" rel="noopener noreferrer nofollow" className={linkClass}>
@@ -34,7 +42,7 @@ export function PlaceLine({ place, className }: { place: string; className?: str
             <span key={i}>{part.text}</span>
           ),
         )}
-        {!online && !placeParts(place).some((part) => part.href) && (
+        {!online && !parts.some((part) => part.href) && (
           <>
             {" "}
             <a
@@ -98,11 +106,11 @@ export function PlaceEditor({
       <button
         type="button"
         onClick={open}
-        className="inline-flex items-center gap-1 rounded text-sm font-medium text-ink underline underline-offset-2 hover:decoration-2 focus-visible:outline-2 focus-visible:outline-accent"
+        className="inline-flex min-h-10 items-center gap-1.5 rounded-lg text-sm font-medium text-ink underline underline-offset-4 hover:decoration-2 focus-visible:outline-2 focus-visible:outline-accent"
       >
         {place ? (
           <>
-            <Pencil className="size-3.5" aria-hidden /> Edit
+            <Pencil className="size-3.5" aria-hidden /> Edit place
           </>
         ) : (
           <>
@@ -124,7 +132,7 @@ export function PlaceEditor({
                 Where is it?
               </h2>
               <p className="mt-0.5 text-sm text-muted">
-                Everyone with the event link sees this straight away.
+                A clear place to meet, online or in person.
               </p>
             </div>
             <Button
@@ -138,10 +146,11 @@ export function PlaceEditor({
             </Button>
           </div>
 
-          <Field label="Place or meeting link" htmlFor="place-input">
+          <Field label="Place or meeting link" htmlFor="place-input" hint="A name, address, or full meeting link. Everyone with the event link can see it.">
             <Input
               id="place-input"
               value={draft}
+              disabled={isSaving}
               onChange={(e) => setDraft(e.target.value)}
               placeholder="Café name, address or meet.google.com/…"
               maxLength={PLACE_MAX_LENGTH}

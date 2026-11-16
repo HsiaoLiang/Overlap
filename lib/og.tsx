@@ -1,51 +1,39 @@
 import "server-only";
-import { cacheLife } from "next/cache";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 
 /*
- * Shared pieces for the link-preview images (the card you see when a link is
- * pasted into LINE, Slack, iMessage…). Rendered by next/og at request time.
+ * Shared pieces for link previews. All fonts are vendored locally, so neither
+ * a production build nor a Chinese event preview needs Google Fonts access.
+ * See assets/fonts/README.md for font sources, coverage and licenses.
  */
 
 export const OG_SIZE = { width: 1200, height: 630 };
 
-/**
- * Download one weight of Noto Sans TC from Google Fonts, trimmed to just the
- * characters we draw. Cached ("use cache"), so the home image can be built
- * ahead of time and each event's image only downloads its font once.
- */
-async function fetchNotoSansTC(weight: number, text: string) {
-  "use cache";
-  cacheLife("max");
-  const cssUrl = `https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@${weight}&text=${encodeURIComponent(text)}`;
-  const css = await (await fetch(cssUrl)).text();
-  const fontUrl = css.match(/src: url\((.+?)\) format\('(?:opentype|truetype)'\)/)?.[1];
-  if (!fontUrl) throw new Error("Font URL not found");
-  return (await fetch(fontUrl)).arrayBuffer();
-}
+const mediumFont = readFile(join(process.cwd(), "assets/fonts/Geist-OG-500.ttf"));
+const boldFont = readFile(join(process.cwd(), "assets/fonts/Geist-OG-700.ttf"));
 
-/**
- * Fonts for the preview images. The default font has no Chinese characters,
- * and event names often do. If the download fails we fall back to the
- * default font rather than erroring (and the failure isn't cached).
- */
+/** Read the larger CJK font only for a preview that needs it. */
+let cjkFont: typeof mediumFont | undefined;
 export async function loadOgFonts(text: string) {
-  try {
-    const [medium, bold] = await Promise.all([
-      fetchNotoSansTC(500, text),
-      fetchNotoSansTC(700, text),
-    ]);
-    return [
-      { name: "Noto Sans TC", data: medium, weight: 500 as const, style: "normal" as const },
-      { name: "Noto Sans TC", data: bold, weight: 700 as const, style: "normal" as const },
-    ];
-  } catch (error) {
-    console.error("loadOgFonts failed, using the default font", error);
-    return [];
+  const [medium, bold] = await Promise.all([mediumFont, boldFont]);
+  const fonts = [
+    { name: "Geist", data: medium, weight: 500 as const, style: "normal" as const },
+    { name: "Geist", data: bold, weight: 700 as const, style: "normal" as const },
+  ];
+  if (/[\u2e80-\u9fff\uf900-\ufaff\uff00-\uffef\u{20000}-\u{323af}]/u.test(text)) {
+    cjkFont ??= readFile(join(process.cwd(), "assets/fonts/OverlapCJK-Regular.woff"));
+    const data = await cjkFont;
+    fonts.push(
+      { name: "Overlap CJK", data, weight: 500, style: "normal" },
+      { name: "Overlap CJK", data, weight: 700, style: "normal" },
+    );
   }
+  return fonts;
 }
 
 // The same values as the light theme in app/globals.css.
-const colors = { canvas: "#fafafa", ink: "#18181b", muted: "#71717a", accent: "#6e56cf" };
+const colors = { canvas: "#f7f4ee", ink: "#182c3a", muted: "#62717a", accent: "#c78c37" };
 
 /** The preview card layout: brand, big title, subtitle, and a mini heatmap. */
 export function OgCard({ title, subtitle }: { title: string; subtitle: string }) {
@@ -64,7 +52,7 @@ export function OgCard({ title, subtitle }: { title: string; subtitle: string })
         display: "flex",
         background: colors.canvas,
         padding: 72,
-        fontFamily: "Noto Sans TC",
+        fontFamily: "Geist, Overlap CJK",
       }}
     >
       <div style={{ display: "flex", flexDirection: "column", flex: 1, paddingRight: 48 }}>

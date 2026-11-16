@@ -1,5 +1,6 @@
 "use client";
 
+import { Check } from "lucide-react";
 import { TimeGrid, type GridPaging } from "@/components/event/time-grid";
 import { useDragSelect, type SelectMode } from "@/hooks/use-drag-select";
 import { cn } from "@/lib/cn";
@@ -38,6 +39,7 @@ export function MyGrid({
       bodyProps={readOnly ? undefined : drag.containerProps}
       renderCell={({ key, row, col, tabIndex }) => {
         const isOn = drag.isCellSelected({ row, col });
+        const startsBlock = isOn && (row === 0 || grid.rows[row].gapBefore || !drag.isCellSelected({ row: row - 1, col }));
         const column = grid.columns[col];
         return (
           <button
@@ -50,13 +52,15 @@ export function MyGrid({
             aria-pressed={isOn}
             aria-label={`${column.label} ${column.sublabel ?? ""} ${grid.rows[row].time}`}
             className={cn(
-              "h-7 transition-colors duration-75 sm:h-6",
+              "flex h-7 items-center justify-center transition-colors duration-75 sm:h-6",
               "focus-visible:relative focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-accent",
-              isOn ? "bg-accent" : "bg-surface",
-              !readOnly && !isOn && "hover:bg-accent/15",
+              isOn ? "bg-[var(--personal)]" : "bg-surface",
+              !readOnly && !isOn && "hover:bg-[color-mix(in_oklch,var(--personal)_12%,var(--surface))]",
               readOnly && "cursor-default",
             )}
-          />
+          >
+            {startsBlock && <Check className="size-3 text-[var(--on-personal)]" strokeWidth={2.5} aria-hidden />}
+          </button>
         );
       }}
     />

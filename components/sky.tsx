@@ -42,6 +42,7 @@ const none = (): SkyWeights => ({ night: 0, dawn: 0, day: 0, sunset: 0, dusk: 0 
 
 let hover: number | null = null;
 let base: number | null = null;
+let timeZone: string | null = null;
 
 // The fade: `shown` is on screen now, moving from `from` to `target`.
 const shown = none();
@@ -54,9 +55,17 @@ let stage: HTMLElement | null = null;
 let layers: Partial<Record<SkyPhoto, HTMLElement>> = {};
 const ready = new Set<SkyPhoto>();
 const loading = new Set<SkyPhoto>();
+const loadedUrls: Partial<Record<SkyPhoto, string>> = {};
 
 function minutesNow() {
   const now = new Date();
+  if (timeZone) {
+    const parts = new Intl.DateTimeFormat("en-GB", {
+      timeZone, hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+    }).formatToParts(now);
+    return Number(parts.find((p) => p.type === "hour")?.value ?? 0) * 60
+      + Number(parts.find((p) => p.type === "minute")?.value ?? 0);
+  }
   return now.getHours() * 60 + now.getMinutes();
 }
 
@@ -64,13 +73,19 @@ function minutesNow() {
 function load(photo: SkyPhoto) {
   if (ready.has(photo) || loading.has(photo)) return;
   loading.add(photo);
-  const url = SOURCES[photo][window.matchMedia(TALL_SCREEN).matches ? "tall" : "wide"];
+  const variant = window.matchMedia(TALL_SCREEN).matches ? "tall" : "wide";
+  const url = SOURCES[photo][variant];
   const image = new Image();
   image.src = url;
   image.decode().then(
     () => {
       loading.delete(photo);
+      if ((window.matchMedia(TALL_SCREEN).matches ? "tall" : "wide") !== variant) {
+        load(photo);
+        return;
+      }
       ready.add(photo);
+      loadedUrls[photo] = url;
       layers[photo]?.style.setProperty("background-image", `url("${url}")`);
       paint();
     },
@@ -152,6 +167,13 @@ export function setSkyBase(minutes: number | null) {
   paint();
 }
 
+/** The resting sky follows the explicitly selected timezone, including DST. */
+export function setSkyTimeZone(next: string | null) {
+  if (timeZone === next) return;
+  timeZone = next;
+  paint();
+}
+
 /**
  * Fetch every photo ahead of time, once the browser is idle. For pages where
  * the sky is about to change a lot (an event's grids), so it never waits.
@@ -172,23 +194,30 @@ export function Sky() {
     layers = {};
     for (const photo of SKY_PHOTOS) {
       const layer = stage?.querySelector<HTMLElement>(`[data-photo="${photo}"]`);
-      if (layer) layers[photo] = layer;
+      if (layer) {
+        layers[photo] = layer;
+        if (ready.has(photo) && loadedUrls[photo]) layer.style.backgroundImage = `url("${loadedUrls[photo]}")`;
+      }
     }
 
     // Turning a phone swaps the wide photos for tall ones (or back).
     const tallScreen = window.matchMedia(TALL_SCREEN);
     const reload = () => {
       ready.clear();
+      target = none();
       paint();
     };
     tallScreen.addEventListener("change", reload);
 
+    target = none();
     paint();
     const clock = setInterval(paint, 60_000); // keep up with the time
     return () => {
       clearInterval(clock);
       tallScreen.removeEventListener("change", reload);
       cancelAnimationFrame(frame);
+      stage = null;
+      layers = {};
     };
   }, []);
 

@@ -30,7 +30,9 @@ import {
  * browser, even though our own form already validates.
  */
 
-const placeSchema = z.string().max(PLACE_MAX_LENGTH * 2, "Keep the place under 200 characters.");
+const placeSchema = z
+  .string()
+  .max(PLACE_MAX_LENGTH, `Keep the place or meeting link to ${PLACE_MAX_LENGTH} characters or fewer.`);
 
 const createEventSchema = z
   .object({

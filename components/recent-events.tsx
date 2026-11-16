@@ -28,8 +28,8 @@ export function RecentEvents() {
   if (events.length === 0) return null;
 
   return (
-    <section aria-labelledby="recent-heading" className="mt-10 max-w-md animate-fade-in">
-      <div className="glass overflow-hidden rounded-2xl">
+    <section aria-labelledby="recent-heading" className="recent-events mt-10 max-w-md animate-fade-in">
+      <div className="overflow-hidden rounded-2xl border border-line">
         <div className="flex items-baseline justify-between gap-2 px-4 pt-3 pb-2">
           <h2 id="recent-heading" className="font-semibold">
             Your events

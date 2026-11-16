@@ -85,8 +85,12 @@ export function CreateEventForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <h2 className="text-lg font-semibold">New event</h2>
+    <form onSubmit={handleSubmit} className="create-form space-y-6">
+      <div className="create-form-heading">
+        <span className="eyebrow">YOUR NEXT GET-TOGETHER</span>
+        <h3 className="text-2xl font-semibold tracking-tight">Let&apos;s make it happen.</h3>
+        <p className="text-sm text-muted">Choose a few options. Everyone gets a say.</p>
+      </div>
       <Field label="Event name" htmlFor="event-name">
         <Input
           id="event-name"
@@ -139,20 +143,15 @@ export function CreateEventForm() {
         />
       </Field>
 
-      <Field
-        label="Where (optional)"
-        htmlFor="event-place"
-        hint="A place or a meeting link. You can add or change it later."
-      >
-        <Input
-          id="event-place"
-          value={place}
-          onChange={(e) => setPlace(e.target.value)}
-          placeholder="Café name, address or meet.google.com/…"
-          maxLength={PLACE_MAX_LENGTH}
-          autoComplete="off"
-        />
-      </Field>
+      <details className="create-optional">
+        <summary>Add a place or meeting link <span>Optional</span></summary>
+        <div className="pt-4">
+          <Field label="Where?" htmlFor="event-place" hint="You can add or change this later.">
+            <Input id="event-place" value={place} onChange={(e) => setPlace(e.target.value)}
+              placeholder="Café name, address or meeting link" maxLength={PLACE_MAX_LENGTH} autoComplete="off" />
+          </Field>
+        </div>
+      </details>
 
       {error && (
         <p role="alert" className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">
@@ -167,10 +166,11 @@ export function CreateEventForm() {
           </>
         ) : (
           <>
-            Create event <ArrowRight className="size-4" />
+            Create & get your link <ArrowRight className="size-4" />
           </>
         )}
       </Button>
+      <p className="create-reassurance">No accounts. Your group&apos;s times stay with your event.</p>
     </form>
   );
 }

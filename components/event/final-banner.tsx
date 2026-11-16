@@ -1,6 +1,6 @@
 "use client";
 
-import { RotateCcw } from "lucide-react";
+import { Check, RotateCcw } from "lucide-react";
 import { AddToCalendar } from "@/components/event/add-to-calendar";
 import { PlaceLine } from "@/components/event/place";
 import { useTimeZoneLabel } from "@/hooks/use-client-value";
@@ -41,18 +41,15 @@ export function FinalBanner({
     <section
       aria-labelledby="final-heading"
       aria-live="polite"
-      className="animate-fade-in rounded-3xl bg-accent p-5 text-on-accent shadow-lg sm:p-7"
+      className="workspace-panel animate-fade-in overflow-hidden rounded-3xl border-t-4 border-t-[var(--heat)] p-5 sm:p-8"
     >
-      {/* All text is full-strength white: faded white on the accent drops under 4.5:1. */}
       <div>
-        <h2 id="final-heading" className="text-sm font-medium">
-          Final time
-        </h2>
-        <p className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">{day}</p>
-        <p className="mt-1 text-xl sm:text-2xl">
+        <h2 id="final-heading" className="moment-label inline-flex items-center gap-2"><span className="inline-flex size-5 items-center justify-center rounded-full bg-[var(--personal)] text-[var(--on-personal)]"><Check className="size-3.5" aria-hidden /></span>It’s a plan</h2>
+        <p className="mt-4 text-3xl font-semibold tracking-tight sm:text-5xl">{day}</p>
+        <p className="mt-2 text-xl sm:text-2xl">
           {time} · {duration}
         </p>
-        <p className="mt-1 text-sm">{timeZone}</p>
+        <p className="mt-2 text-sm text-muted">{timeZone} · Your selected timezone</p>
         {place && <PlaceLine place={place} className="mt-3 text-base" />}
 
         <div className="mt-5 flex flex-wrap items-center gap-2">
@@ -63,14 +60,14 @@ export function FinalBanner({
               type="button"
               onClick={onReopen}
               disabled={isBusy}
-              className="inline-flex h-10 items-center gap-2 rounded-lg px-3 text-sm font-medium text-on-accent ring-1 ring-on-accent/40 transition hover:bg-on-accent/10 disabled:opacity-50"
+              className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-line px-3 text-sm font-medium text-ink transition hover:bg-subtle disabled:opacity-50"
             >
               <RotateCcw className="size-4" /> Reopen event
             </button>
           )}
         </div>
 
-        <div className="mt-5 grid gap-3 border-t border-on-accent/20 pt-4 text-sm sm:grid-cols-2">
+        <div className="mt-6 grid gap-4 border-t border-line pt-5 text-sm sm:grid-cols-2">
           <PeopleList label={`Coming (${free.length})`} people={free} meId={meId} />
           <PeopleList label={`Can't make it (${cantMake.length})`} people={cantMake} meId={meId} muted />
         </div>
@@ -92,7 +89,7 @@ function PeopleList({
 }) {
   return (
     <div>
-      <p className="mb-1.5 text-xs font-medium">{label}</p>
+      <p className="mb-2 text-xs font-medium text-muted">{label}</p>
       {people.length === 0 ? (
         <p>—</p>
       ) : (
@@ -103,7 +100,7 @@ function PeopleList({
               className={cn(
                 "rounded-full px-2.5 py-0.5",
                 // Coming: solid chips. Can't make it: outlined.
-                muted ? "ring-1 ring-on-accent/50 ring-inset" : "bg-on-accent font-medium text-accent",
+                muted ? "border border-line text-muted" : "bg-[color-mix(in_oklch,var(--personal)_10%,var(--surface))] font-medium text-ink",
               )}
             >
               {p.name}
