@@ -15,8 +15,8 @@
 </p>
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/event-dark.png" />
-  <img src="docs/screenshots/event-light.png" alt="An Overlap event: the best times at the top, your own availability on the left and the group heatmap on the right." />
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/observatory-night.webp" />
+  <img src="docs/screenshots/observatory-day.webp" alt="Overlap's illustrated observatory: a globe beneath the word together, three synchronized city clocks, and a slider for exploring a shared instant." />
 </picture>
 
 ## How it works
@@ -38,14 +38,12 @@
 
 <table>
   <tr>
-    <td width="33%"><img src="docs/screenshots/mobile-create.png" alt="Creating an event on a phone: pick dates on a calendar" /></td>
-    <td width="33%"><img src="docs/screenshots/mobile-best-times.png" alt="An event on a phone with the top three best times" /></td>
-    <td width="33%"><img src="docs/screenshots/mobile-final.png" alt="The final time on a phone: Thursday 19 November, 19:00 to 20:30, with Add to calendar and who's coming" /></td>
+    <td width="50%"><img src="docs/screenshots/observatory-mobile.webp" alt="The observatory on a phone: a globe, city clocks, and Find our time within the first screen" /></td>
+    <td width="50%"><img src="docs/screenshots/observatory-create.webp" alt="Creating an event inside the illustrated scene, one step at a time" /></td>
   </tr>
   <tr>
-    <td align="center">Create</td>
-    <td align="center">Best times</td>
-    <td align="center">Final time</td>
+    <td align="center">Explore our world</td>
+    <td align="center">Make a plan</td>
   </tr>
 </table>
 
@@ -69,12 +67,13 @@
   screen updates instantly.
 - **Every timezone.** Times are shown in each viewer's own timezone, even when
   that splits a day across midnight.
-- **A shared moment, made visible.** The home page has a labelled interactive
-  example: slide one instant across London, New York and Taipei, then find
-  the hour when everyone is free. It is separate from your real events.
-- **A sky that tells the time.** The background follows the selected timezone.
-  Preview a suggested time explicitly, or let the final plan set the sky.
-  Painting availability keeps the workspace steady.
+- **A little world to explore.** Spin the real globe, choose a city and slide
+  through a day. City clocks share one instant; the illustrated sky changes
+  light without changing its clouds. The clocks are world-time references,
+  not inferred participant locations.
+- **Make a plan inside the scene.** The globe makes room for a three-step
+  event form. Drafts stay intact when you go back; no real date is selected
+  for you. A chosen city can provide the initial event timezone.
 - **A calm workspace.** Personal availability is teal; group overlap uses
   sunlight gold. The best suggestion leads, alternatives expand on demand,
   and a confirmed plan puts its time, place and calendar actions first.
@@ -100,12 +99,12 @@
   remembers which participant you are, your organiser token if you organise,
   and your list of events. These stay on your device.
 
-## Photo credits
+## Visual credits
 
-The sky photos are from Wikimedia Commons, by Alexander Kurilov, Basile Morin,
-Dmitry Makeev, Thennicke and Trougnouf, under CC BY 4.0 and CC BY-SA 4.0. The
-full list, with links, is in [`assets/sky/CREDITS.md`](assets/sky/CREDITS.md)
-and on the site at `/credits`.
+The observatory uses one generated cloud illustration, graded continuously
+through the day. Artwork details and the original Wikimedia photo study's
+attributions are in [`assets/sky/CREDITS.md`](assets/sky/CREDITS.md) and on
+the site at `/credits`.
 
 ---
 
@@ -114,8 +113,8 @@ and on the site at `/credits`.
 Built with Next.js (App Router) · TypeScript · Tailwind CSS · Supabase
 (Postgres + Realtime) · deployed on Vercel.
 
-The [shared-moment design notes](docs/shared-moment.md) cover the interactive
-example, workspace states, local fonts, rollout and verification.
+The [design notes](docs/shared-moment.md) cover the observatory, world-time
+interaction, creation flow, local assets, rollout and verification.
 
 ### How it fits together
 

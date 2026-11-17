@@ -33,7 +33,7 @@ export async function loadOgFonts(text: string) {
 }
 
 // The same values as the light theme in app/globals.css.
-const colors = { canvas: "#f7f4ee", ink: "#182c3a", muted: "#62717a", accent: "#c78c37" };
+const colors = { canvas: "#e4e7fc", ink: "#243356", muted: "#5c6886", accent: "#f49a78" };
 
 /** The preview card layout: brand, big title, subtitle, and a mini heatmap. */
 export function OgCard({ title, subtitle }: { title: string; subtitle: string }) {

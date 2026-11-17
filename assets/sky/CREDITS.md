@@ -1,3 +1,15 @@
+# Current illustrated sky
+
+`cloud-world.webp` was generated for Overlap with OpenAI image tools. It is
+one cohesive cloud illustration; time-of-day changes are continuous colour
+and light grading in code. It is not derived from the photographs below.
+The original generated PNG is optimized to WebP without changing its content.
+
+# Earlier photographic studies
+
+These source assets remain in the repository for attribution/history; the
+current interface uses the illustration above.
+
 # Sky photos
 
 Five photographs from Wikimedia Commons, one for each part of the day. Each

@@ -6,7 +6,7 @@ export function LogoMark({ className = "size-6" }: { className?: string }) {
     <svg viewBox="0 0 32 32" aria-hidden className={className}>
       <circle cx="12" cy="16" r="9" fill="currentColor" opacity="0.16" stroke="currentColor" strokeWidth="1" />
       <circle cx="20" cy="16" r="9" fill="currentColor" opacity="0.16" stroke="currentColor" strokeWidth="1" />
-      <path d="M16 8.5a9 9 0 0 1 0 15a9 9 0 0 1 0-15z" fill="var(--heat)" />
+      <path d="M16 8.5a9 9 0 0 1 0 15a9 9 0 0 1 0-15z" fill="#ff936d" />
     </svg>
   );
 }

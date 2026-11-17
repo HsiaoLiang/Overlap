@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import localFont from "next/font/local";
 import { Analytics } from "@/components/analytics";
+import { CreateLink } from "@/components/create/create-link";
 import { Logo } from "@/components/logo";
 import { Sky } from "@/components/sky";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -10,6 +11,7 @@ import "./globals.css";
 
 const geistSans = localFont({ src: "../assets/fonts/Geist-Latin.woff2", variable: "--font-geist-sans", display: "swap", weight: "100 900" });
 const geistMono = localFont({ src: "../assets/fonts/GeistMono-Latin.woff2", variable: "--font-geist-mono", display: "swap", weight: "100 900", preload: false });
+const bricolage = localFont({ src: "../assets/fonts/Bricolage-Latin.woff", variable: "--font-display", display: "swap", weight: "200 800" });
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://overlapping.day"),
@@ -34,7 +36,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${bricolage.variable} h-full antialiased`}
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
@@ -45,20 +47,20 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <header className="site-header">
           <div className="site-nav">
             <Logo />
-            <div className="site-nav-right"><span className="nav-note">A little closer, wherever you are.</span><ThemeToggle /></div>
+            <div className="site-nav-right"><CreateLink /><ThemeToggle /></div>
           </div>
         </header>
         {/* Soft glows may reach past the edge: clip them rather than scroll sideways. */}
         <div id="main-content" tabIndex={-1} className="flex flex-1 flex-col overflow-x-clip outline-none">{children}</div>
         <footer className="site-footer">
-          <span>Made for the moments in between.</span>
+          <span>Small world. Good company.</span>
           <p>
-            A shared sky.{" "}
+            A sky of our own.{" "}
             <Link
               href="/credits"
               className="rounded underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-accent"
             >
-              Photo credits
+              Visual credits
             </Link>
           </p>
         </footer>

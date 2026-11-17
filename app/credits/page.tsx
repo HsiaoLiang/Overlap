@@ -1,22 +1,23 @@
 import type { Metadata } from "next";
 import { LICENCE_URLS, SKY_CREDITS } from "@/lib/sky-credits";
 
-export const metadata: Metadata = { title: "Photo credits" };
+export const metadata: Metadata = { title: "Visual credits" };
 
 const linkClass =
   "rounded font-medium text-ink underline underline-offset-2 hover:decoration-2 focus-visible:outline-2 focus-visible:outline-accent";
 
-/** Who took the sky photos behind every page, and under which licence. */
+/** Artwork provenance and the original photo studies retained in the source. */
 export default function CreditsPage() {
   return (
     <main className="mx-auto w-full max-w-2xl px-4 pt-8 pb-16 sm:px-6">
       <div className="glass rounded-3xl p-5 sm:p-8">
-        <h1 className="text-2xl font-semibold tracking-tight">Photo credits</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">A sky of our own.</h1>
         <p className="mt-2 text-sm text-pretty text-muted">
-          The sky behind Overlap is five photographs from Wikimedia Commons, one for each part of
-          the day. Each was cropped to the sky and resized; the cropped versions are shared under
-          the same licence as the original.
+          Overlap&apos;s cloud world is one illustration, made for this project with OpenAI&apos;s image tools.
+          Its clouds stay in place as the light moves from dawn to midnight, so every hour belongs to the same little world.
         </p>
+        <h2 className="mt-8 text-lg font-semibold">Earlier photo studies</h2>
+        <p className="mt-2 text-sm leading-relaxed text-muted">The original sky experiments used these photographs from Wikimedia Commons. Their cropped source assets remain in this repository under the same licences as the originals.</p>
 
         <ul className="mt-6 divide-y divide-ink/10">
           {SKY_CREDITS.map((photo) => (

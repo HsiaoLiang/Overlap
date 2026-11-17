@@ -3,6 +3,11 @@
 The app and its link-preview images read these files locally. Builds and Chinese
 link previews do not need a Google Fonts download.
 
+- `Bricolage-Latin.woff`: a Latin subset of the variable Bricolage Grotesque
+  font, used for the observatory typography. Source: Google Fonts
+  `ofl/bricolagegrotesque/BricolageGrotesque[opsz,wdth,wght].ttf`, subset with
+  fontTools. The project authors' SIL Open Font License is in `Bricolage-OFL.txt`.
+
 - `Geist-Latin.woff2` and `GeistMono-Latin.woff2`: variable Latin subsets bundled
   with Next.js 16.4.3 (`next/dist/next-devtools/server/font/`). Their SIL Open Font
   Licenses are in `Geist-OFL.txt` and `GeistMono-OFL.txt`.
