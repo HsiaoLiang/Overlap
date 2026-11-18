@@ -7,7 +7,15 @@ import { Button } from "@/components/ui/button";
 import { useClientValue } from "@/hooks/use-client-value";
 
 /** "Copy link" plus a QR code dialog, for sharing an event. */
-export function ShareButtons({ slug, eventName }: { slug: string; eventName: string }) {
+export function ShareButtons({
+  slug,
+  eventName,
+  prominent = false,
+}: {
+  slug: string;
+  eventName: string;
+  prominent?: boolean;
+}) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [copied, setCopied] = useState(false);
   const [url, setUrl] = useState("");
@@ -36,26 +44,41 @@ export function ShareButtons({ slug, eventName }: { slug: string; eventName: str
   const canShare = useClientValue(() => "share" in navigator) ?? false;
   async function nativeShare() {
     try {
-      await navigator.share({ title: eventName, text: `When are you free for “${eventName}”?`, url });
-    } catch {
-      // The user closed the share sheet — nothing to do.
+      await navigator.share({
+        title: eventName,
+        text: `When are you free for “${eventName}”?`,
+        url: eventUrl(),
+      });
+    } catch (error) {
+      if (!(error instanceof DOMException && error.name === "AbortError")) await copy();
     }
   }
 
   return (
     <div className="flex gap-2">
-      <Button variant="secondary" onClick={copy} className="flex-1 sm:flex-none" aria-live="polite">
-        {copied ? (
-          <>
-            <Check className="size-4 text-accent-ink" /> Copied
-          </>
-        ) : (
-          <>
-            <Link2 className="size-4" /> Copy link
-          </>
-        )}
+      {prominent && canShare && (
+        <Button size="lg" onClick={nativeShare} className="min-w-0 flex-1 !px-3">
+          <Share2 className="size-4" aria-hidden /> Share invitation
+        </Button>
+      )}
+      <Button
+        variant={prominent && !canShare ? "primary" : "secondary"}
+        size={prominent && !canShare ? "lg" : "md"}
+        onClick={copy}
+        className={prominent && canShare ? "!size-12 !p-0" : prominent ? "flex-1" : "flex-1 sm:flex-none"}
+        aria-label={prominent && canShare ? (copied ? "Invitation copied" : "Copy invitation") : undefined}
+        aria-live="polite"
+      >
+        {copied ? <Check className="size-4" aria-hidden /> : <Link2 className="size-4" aria-hidden />}
+        {!(prominent && canShare) && (copied ? "Copied" : prominent ? "Copy invitation" : "Copy link")}
       </Button>
-      <Button variant="secondary" onClick={openQr} aria-label="Show QR code" title="QR code">
+      <Button
+        variant="secondary"
+        onClick={openQr}
+        className={prominent ? "!size-12 !p-0" : undefined}
+        aria-label="Show QR code"
+        title="QR code"
+      >
         <QrCode className="size-4" />
       </Button>
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { Globe, Lock } from "lucide-react";
+import { Globe } from "lucide-react";
 import {
   finaliseEvent,
   loadEventSnapshot,
@@ -90,7 +90,29 @@ export function EventView({
   }
 
   // On phones the two panels become tabs; on wide screens they sit side by side.
-  const [mobileTab, setMobileTab] = useState<MobileView>("mine");
+  const [mobileTab, setMobileTab] = useState<MobileView | null>(null);
+  const showMine = !isClosed || me !== null;
+  const activeTab = showMine ? mobileTab ?? (isClosed ? "group" : "mine") : "group";
+  const availabilityStart = useRef<HTMLDivElement>(null);
+  const myHeading = useRef<HTMLHeadingElement>(null);
+  const focusAfterJoin = useRef(false);
+  const participantId = me?.id ?? null;
+
+  useEffect(() => {
+    if (!focusAfterJoin.current || !participantId || !grid || isClosed) return;
+    focusAfterJoin.current = false;
+    myHeading.current?.focus({ preventScroll: true });
+    myHeading.current?.scrollIntoView({ block: "start" });
+  }, [grid, isClosed, participantId]);
+
+  function switchAvailability(view: MobileView) {
+    if (view === activeTab) return;
+    setMobileTab(view);
+    const start = availabilityStart.current;
+    if (start && start.getBoundingClientRect().top < 0) {
+      requestAnimationFrame(() => start.scrollIntoView({ block: "start" }));
+    }
+  }
 
   // A short "Bea updated" notice next to the Live badge.
   const [recentChange, setRecentChange] = useState<string | null>(null);
@@ -113,6 +135,9 @@ export function EventView({
   }
 
   function handleJoined(participant: Participant, pin: string | undefined) {
+    focusAfterJoin.current = true;
+    setFirstColumn(0);
+    setMobileTab("mine");
     setParticipants((list) => upsert(list, participant));
     setIdentity({ participantId: participant.id, pin });
     // Our own "joined" broadcast can arrive before we know it's us: hide it.
@@ -130,6 +155,15 @@ export function EventView({
   }, [event.slug, event.name, role]);
   const [isOrganising, startOrganising] = useTransition();
   const [organiserError, setOrganiserError] = useState<string | null>(null);
+  const focusAfterFinalising = useRef(false);
+
+  useEffect(() => {
+    if (!focusAfterFinalising.current || !isClosed || !viewerTimeZone) return;
+    focusAfterFinalising.current = false;
+    const heading = document.getElementById("final-heading");
+    heading?.focus({ preventScroll: true });
+    heading?.scrollIntoView({ block: "start" });
+  }, [final, isClosed, viewerTimeZone]);
 
   function pickFinal(range: FinalRange) {
     if (!hostToken) return;
@@ -137,6 +171,7 @@ export function EventView({
     startOrganising(async () => {
       const result = await finaliseEvent({ slug: event.slug, token: hostToken, ...range });
       if (result.ok) {
+        focusAfterFinalising.current = true;
         setFinal(result.final);
         setSelectedRangeId(null);
         showSlot(range.start);
@@ -158,7 +193,7 @@ export function EventView({
 
   // --- Live updates -------------------------------------------------------
 
-  const meId = me?.id ?? null;
+  const meId = participantId;
 
   /** Someone else joined or saved. */
   function handleRemoteParticipant(incoming: Participant) {
@@ -190,8 +225,18 @@ export function EventView({
     onResync: resync,
   });
 
+  const saveStatus = me && !isClosed && (
+    <SaveStatus
+      status={autosave.status}
+      error={autosave.error}
+      onRetry={() =>
+        autosave.queue({ participantId: me.id, pin: identity?.pin, slots: me.slots })
+      }
+    />
+  );
+
   return (
-    <div className="animate-fade-in space-y-4 pb-8 lg:pb-0">
+    <div className="space-y-4">
       <EventHeader
         event={event}
         isClosed={isClosed}
@@ -200,78 +245,22 @@ export function EventView({
         }
       />
 
-      {finalRange && viewerTimeZone && (
-        <FinalBanner
-          event={event}
-          range={finalRange}
-          participants={participants}
-          meId={meId}
-          viewerTimeZone={viewerTimeZone}
-          onReopen={hostToken ? reopen : undefined}
-          isBusy={isOrganising}
-        />
-      )}
-
-      <div className="flex flex-wrap items-center gap-1 text-sm text-muted">
-        <Globe className="size-4" aria-hidden />
-        <span>Times shown in</span>
-        {viewerTimeZone && (
-          <TimezonePicker
-            variant="inline"
-            value={viewerTimeZone}
-            onChange={setChosenTimeZone}
-            suggestions={[
-              ...(browserTimeZone ? [{ id: browserTimeZone, note: "Your timezone" }] : []),
-              { id: event.timezone, note: "Event's timezone" },
-            ]}
+      {finalRange && (
+        viewerTimeZone ? (
+          <FinalBanner
+            event={event}
+            range={finalRange}
+            participants={participants}
+            meId={meId}
+            viewerTimeZone={viewerTimeZone}
+            onReopen={hostToken ? reopen : undefined}
+            isBusy={isOrganising}
           />
-        )}
-      </div>
-
-      {isClosed ? null : viewerTimeZone ? (
-        <BestTimes
-          event={event}
-          ranges={ranges}
-          participants={participants}
-          viewerTimeZone={viewerTimeZone}
-          selectedId={selectedRange?.id ?? null}
-          onSelect={(id) => {
-            setSelectedRangeId(id);
-            const range = ranges.find((r) => r.id === id);
-            if (!range) return;
-            setMobileTab("group"); // show it on the heatmap
-            showSlot(range.id); // a range's id is its first slot key
-            if (hostToken) {
-              const final = rangeFrom(range.keys[0], range.keys.length * SLOT_MINUTES);
-              setPreset((p) => ({ range: final, n: (p?.n ?? 0) + 1 }));
-              const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-              requestAnimationFrame(() =>
-                document
-                  .getElementById("pick-final")
-                  ?.scrollIntoView({ block: "nearest", behavior: reduce ? "auto" : "smooth" }),
-              );
-            }
-          }}
-        />
-      ) : (
-        <div className="h-40 animate-pulse rounded-2xl bg-subtle" />
-      )}
-
-      {hostToken && !isClosed && viewerTimeZone && (
-        <PickFinalTime
-          key={preset?.n ?? 0}
-          event={event}
-          participants={participants}
-          viewerTimeZone={viewerTimeZone}
-          suggested={
-            preset?.range ??
-            (ranges[0]
-              ? rangeFrom(ranges[0].keys[0], ranges[0].keys.length * SLOT_MINUTES)
-              : undefined)
-          }
-          onPick={pickFinal}
-          isPicking={isOrganising}
-        />
+        ) : (
+          <div className="h-52 animate-pulse rounded-2xl bg-subtle" role="status">
+            <span className="sr-only">Loading final time</span>
+          </div>
+        )
       )}
 
       {organiserError && (
@@ -280,87 +269,177 @@ export function EventView({
         </p>
       )}
 
-      <MobileViewTabs
-        value={mobileTab}
-        onChange={setMobileTab}
-        groupCount={participants.length}
-      />
+      <div ref={availabilityStart} className="space-y-4">
+        {showMine && (
+          <MobileViewTabs
+            value={activeTab}
+            onChange={switchAvailability}
+            groupCount={participants.length}
+            saveStatus={activeTab === "mine" ? saveStatus : null}
+            isClosed={isClosed}
+          />
+        )}
 
-      <div className="grid items-start gap-6 lg:grid-cols-2">
-        <section
-          className={cn(
-            "min-w-0 rounded-2xl border border-line bg-surface p-3 shadow-sm sm:p-5",
-            mobileTab !== "mine" && "hidden lg:block",
-          )}
-        >
-          {!grid ? (
-            <GridSkeleton />
-          ) : me ? (
-            <>
-              <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-                <div>
-                  <h2 className="font-semibold">Your availability</h2>
-                  <p className="text-sm text-muted">
-                    Responding as <span className="font-medium text-ink">{me.name}</span> ·{" "}
-                    <button
-                      type="button"
-                      onClick={() => setIdentity(null)}
-                      className="underline-offset-2 hover:text-ink hover:underline"
-                    >
-                      Not you?
-                    </button>
-                  </p>
-                </div>
-                <SaveStatus
-                  status={autosave.status}
-                  error={autosave.error}
-                  onRetry={() =>
-                    autosave.queue({ participantId: me.id, pin: identity?.pin, slots: me.slots })
+        {viewerTimeZone && (
+          <div
+            className={cn(
+              "flex flex-wrap items-center gap-1 text-sm text-muted",
+              !me && activeTab === "mine" && "hidden lg:flex",
+            )}
+          >
+            <Globe className="size-4" aria-hidden />
+            <span>Times shown in</span>
+            <TimezonePicker
+              variant="inline"
+              value={viewerTimeZone}
+              onChange={setChosenTimeZone}
+              suggestions={[
+                ...(browserTimeZone ? [{ id: browserTimeZone, note: "Your timezone" }] : []),
+                { id: event.timezone, note: "Event's timezone" },
+              ]}
+            />
+          </div>
+        )}
+
+        {!isClosed && (
+          <div
+            id="group-recommendations"
+            className={cn("space-y-4", activeTab !== "group" && "hidden lg:block")}
+          >
+            {viewerTimeZone ? (
+              <BestTimes
+                event={event}
+                ranges={ranges}
+                participants={participants}
+                viewerTimeZone={viewerTimeZone}
+                selectedId={selectedRange?.id ?? null}
+                onSelect={(id) => {
+                  setSelectedRangeId(id);
+                  const range = ranges.find((r) => r.id === id);
+                  if (!range) return;
+                  showSlot(range.id);
+                  if (hostToken) {
+                    const final = rangeFrom(range.keys[0], range.keys.length * SLOT_MINUTES);
+                    setPreset((p) => ({ range: final, n: (p?.n ?? 0) + 1 }));
+                    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+                    requestAnimationFrame(() =>
+                      document
+                        .getElementById("pick-final")
+                        ?.scrollIntoView({ block: "nearest", behavior: reduce ? "auto" : "smooth" }),
+                    );
                   }
-                />
-              </div>
-              <MyGrid
+                }}
+              />
+            ) : (
+              <div className="h-24 animate-pulse rounded-xl bg-subtle" aria-hidden />
+            )}
+
+            {hostToken && viewerTimeZone && (
+              <PickFinalTime
+                key={preset?.n ?? 0}
+                event={event}
+                participants={participants}
+                viewerTimeZone={viewerTimeZone}
+                suggested={
+                  preset?.range ??
+                  (ranges[0]
+                    ? rangeFrom(ranges[0].keys[0], ranges[0].keys.length * SLOT_MINUTES)
+                    : undefined)
+                }
+                onPick={pickFinal}
+                isPicking={isOrganising}
+              />
+            )}
+          </div>
+        )}
+
+        <div className={cn("grid items-start gap-6", showMine && "lg:grid-cols-2")}>
+          {showMine && (
+            <section
+              id="your-availability-panel"
+              className={cn(
+                "min-w-0 lg:rounded-2xl lg:border lg:border-line lg:bg-surface lg:p-5",
+                activeTab !== "mine" && "hidden lg:block",
+              )}
+            >
+              {me ? (
+                <>
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-x-2">
+                    <div className="min-w-0">
+                      <h2
+                        ref={myHeading}
+                        tabIndex={-1}
+                        className="scroll-mt-24 font-semibold focus-visible:outline-2 focus-visible:outline-accent lg:scroll-mt-5"
+                      >
+                        Your availability
+                      </h2>
+                      <p className="flex flex-wrap items-center gap-x-1 text-sm text-muted">
+                        <span className="min-w-0 wrap-anywhere">
+                          Responding as <strong className="font-medium text-ink">{me.name}</strong>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setIdentity(null)}
+                          className="min-h-11 rounded px-1 underline-offset-2 hover:text-ink hover:underline focus-visible:outline-2 focus-visible:outline-accent"
+                        >
+                          Not you?
+                        </button>
+                      </p>
+                    </div>
+                    {!isClosed && <div className="hidden lg:block">{saveStatus}</div>}
+                  </div>
+
+                  {grid ? (
+                    <MyGrid
+                      grid={grid}
+                      selected={mySlots}
+                      onChange={handlePaint}
+                      readOnly={isClosed}
+                      paging={paging}
+                    />
+                  ) : (
+                    <GridSkeleton />
+                  )}
+                  {isClosed ? (
+                    <p className="mt-3 text-sm text-muted">
+                      The organiser has picked a time. Responses are closed.
+                    </p>
+                  ) : (
+                    <p className="mt-3 hidden text-sm text-muted lg:block">
+                      Click or drag to mark when you&apos;re free.
+                    </p>
+                  )}
+                </>
+              ) : (
+                <JoinForm slug={event.slug} onJoined={handleJoined} />
+              )}
+            </section>
+          )}
+
+          <section
+            id="group-availability-panel"
+            className={cn(
+              "min-w-0 lg:rounded-2xl lg:border lg:border-line lg:bg-surface lg:p-5",
+              activeTab !== "group" && "hidden lg:block",
+            )}
+          >
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <h2 className="font-semibold">Group availability</h2>
+              <LiveBadge status={liveStatus} recentChange={recentChange} />
+            </div>
+            {grid ? (
+              <GroupPanel
                 grid={grid}
-                selected={mySlots}
-                onChange={handlePaint}
-                readOnly={isClosed}
+                participants={participants}
+                meId={meId}
+                highlightKeys={selectedRange?.keys ?? finalKeys}
                 paging={paging}
               />
-              <p className="mt-3 text-center text-xs text-muted">
-                {isClosed
-                  ? "The organiser has picked a time, so answers are locked."
-                  : "Tap or drag to mark when you're free. Changes save automatically."}
-              </p>
-            </>
-          ) : isClosed ? (
-            <ClosedNotice />
-          ) : (
-            <JoinForm slug={event.slug} onJoined={handleJoined} />
-          )}
-        </section>
-
-        <section
-          className={cn(
-            "min-w-0 rounded-2xl border border-line bg-surface p-3 shadow-sm sm:p-5",
-            mobileTab !== "group" && "hidden lg:block",
-          )}
-        >
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-            <h2 className="font-semibold">Group availability</h2>
-            <LiveBadge status={liveStatus} recentChange={recentChange} />
-          </div>
-          {grid ? (
-            <GroupPanel
-              grid={grid}
-              participants={participants}
-              meId={me?.id ?? null}
-              highlightKeys={selectedRange?.keys ?? finalKeys}
-              paging={paging}
-            />
-          ) : (
-            <GridSkeleton />
-          )}
-        </section>
+            ) : (
+              <GridSkeleton />
+            )}
+          </section>
+        </div>
       </div>
     </div>
   );
@@ -376,13 +455,13 @@ function upsert(list: Participant[], participant: Participant) {
 function LiveBadge({ status, recentChange }: { status: LiveStatus; recentChange: string | null }) {
   const label = { live: "Live", connecting: "Connecting…", offline: "Offline" }[status];
   return (
-    <span aria-live="polite" className="inline-flex items-center gap-2 text-xs text-muted">
+    <span aria-live="polite" className="inline-flex min-w-0 items-center gap-2 text-xs text-muted">
       {recentChange && (
-        <span className="animate-fade-in rounded-full bg-accent/10 px-2 py-0.5 text-accent-ink">
+        <span className="min-w-0 animate-fade-in rounded-full bg-accent/10 px-2 py-0.5 wrap-anywhere text-accent-ink">
           {recentChange}
         </span>
       )}
-      <span className="inline-flex items-center gap-1.5">
+      <span className="inline-flex shrink-0 items-center gap-1.5">
         <span className="relative flex size-2">
           {status === "live" && (
             <span className="absolute inline-flex size-full animate-ping rounded-full bg-accent opacity-60" />
@@ -397,18 +476,6 @@ function LiveBadge({ status, recentChange }: { status: LiveStatus; recentChange:
         {label}
       </span>
     </span>
-  );
-}
-
-function ClosedNotice() {
-  return (
-    <div className="flex flex-col items-center py-12 text-center">
-      <div className="mb-3 flex size-10 items-center justify-center rounded-full bg-subtle">
-        <Lock className="size-5 text-muted" aria-hidden />
-      </div>
-      <p className="font-medium">Responses are closed</p>
-      <p className="mt-1 text-sm text-muted">The organiser has picked a time. See it at the top.</p>
-    </div>
   );
 }
 

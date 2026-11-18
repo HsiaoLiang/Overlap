@@ -36,9 +36,6 @@ export function TimeCombobox({
   const listRef = useRef<HTMLUListElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [text, setText] = useState<string | null>(null); // null = showing `value`
-  // On some phones, tapping a list option blurs the input first. We wait a
-  // moment before acting on blur so the tap on the option still lands.
-  const blurTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -47,7 +44,6 @@ export function TimeCombobox({
 
   /** Apply a choice, or explain why not (naming what was typed) and keep the old value. */
   function commit(minutes: number | null, typed?: string) {
-    clearTimeout(blurTimer.current);
     setText(null);
     setOpen(false);
     if (minutes === null) {
@@ -99,6 +95,7 @@ export function TimeCombobox({
         aria-autocomplete="list"
         aria-activedescendant={open && active !== null ? `${listId}-${active}` : undefined}
         aria-invalid={error ? true : undefined}
+        aria-describedby={error ? `${id}-error` : undefined}
         inputMode="numeric"
         autoComplete="off"
         value={text ?? minutesToLabel(value)}
@@ -114,11 +111,8 @@ export function TimeCombobox({
           setActive(parsed !== null && enabled.includes(parsed) ? parsed : null);
         }}
         onBlur={() => {
-          const typed = text; // what was in the box when focus left
-          blurTimer.current = setTimeout(() => {
-            if (typed !== null) commit(parseTimeInput(typed), typed);
-            else setOpen(false);
-          }, 150);
+          if (text !== null) commit(parseTimeInput(text), text);
+          else setOpen(false);
         }}
         onKeyDown={handleKeyDown}
         className={cn(
@@ -131,7 +125,7 @@ export function TimeCombobox({
         type="button"
         tabIndex={-1}
         aria-label={`Show ${label.toLowerCase()} options`}
-        onMouseDown={(e) => e.preventDefault()} // keep focus in the input
+        onPointerDown={(e) => e.preventDefault()} // keep focus in the input
         onClick={() => {
           setOpen((o) => !o);
           setActive(value);
@@ -161,7 +155,7 @@ export function TimeCombobox({
                 aria-selected={selected}
                 aria-disabled={disabled || undefined}
                 data-active={m === active}
-                onMouseDown={(e) => e.preventDefault()} // don't blur the input first
+                onPointerDown={(e) => e.preventDefault()} // keep the option open until the click
                 onClick={() => !disabled && commit(m)}
                 onMouseEnter={() => !disabled && setActive(m)}
                 className={cn(
@@ -180,7 +174,7 @@ export function TimeCombobox({
       )}
 
       {error && (
-        <p role="alert" className="mt-1 text-xs text-danger">
+        <p id={`${id}-error`} role="alert" className="mt-1 text-xs text-danger">
           {error}
         </p>
       )}

@@ -28,14 +28,14 @@ export function RecentEvents() {
   if (events.length === 0) return null;
 
   return (
-    <section aria-labelledby="recent-heading" className="mt-10 max-w-md animate-fade-in">
+    <section aria-labelledby="recent-heading" className="min-w-0 max-w-md animate-fade-in lg:col-start-1 lg:row-start-2">
       <div className="mb-3 flex items-baseline justify-between gap-2">
         <h2 id="recent-heading" className="font-semibold">
           Your events
         </h2>
         <span className="text-xs text-muted">Saved on this device</span>
       </div>
-      <ul className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface shadow-sm">
+      <ul className="divide-y divide-line overflow-hidden rounded-xl border border-line bg-surface">
         {events.slice(0, 8).map((event) => (
           <li key={event.slug} className="flex items-center gap-2 pr-2 transition-colors hover:bg-subtle">
             <Link

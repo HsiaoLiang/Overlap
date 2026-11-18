@@ -37,11 +37,11 @@ export function FinalBanner({
     <section
       aria-labelledby="final-heading"
       aria-live="polite"
-      className="animate-fade-in rounded-3xl bg-accent p-5 text-on-accent shadow-lg sm:p-7"
+      className="animate-fade-in rounded-2xl bg-accent p-5 text-on-accent sm:p-7"
     >
       {/* All text is full-strength white: faded white on the accent drops under 4.5:1. */}
       <div>
-        <h2 id="final-heading" className="text-sm font-medium">
+        <h2 id="final-heading" tabIndex={-1} className="scroll-mt-4 text-sm font-medium">
           Final time
         </h2>
         <p className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">{day}</p>
@@ -57,7 +57,7 @@ export function FinalBanner({
               type="button"
               onClick={onReopen}
               disabled={isBusy}
-              className="inline-flex h-10 items-center gap-2 rounded-lg px-3 text-sm font-medium text-on-accent ring-1 ring-on-accent/40 transition hover:bg-on-accent/10 disabled:opacity-50"
+              className="inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-medium text-on-accent ring-1 ring-on-accent/40 transition hover:bg-on-accent/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-on-accent disabled:opacity-50"
             >
               <RotateCcw className="size-4" /> Reopen event
             </button>
@@ -95,7 +95,7 @@ function PeopleList({
             <li
               key={p.id}
               className={cn(
-                "rounded-full px-2.5 py-0.5",
+                "max-w-full rounded-full px-2.5 py-0.5 wrap-anywhere",
                 // Coming: solid chips. Can't make it: outlined.
                 muted ? "ring-1 ring-on-accent/50 ring-inset" : "bg-on-accent font-medium text-accent",
               )}

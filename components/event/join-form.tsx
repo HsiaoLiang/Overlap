@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition, type FormEvent } from "react";
-import { LoaderCircle, Lock } from "lucide-react";
+import { ChevronDown, LoaderCircle, Lock } from "lucide-react";
 import { joinEvent } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
@@ -29,26 +29,27 @@ export function JoinForm({
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (!canSubmit) return;
     setError(null);
     startTransition(async () => {
-      const result = await joinEvent({ slug, name, pin: showPin ? pin : undefined });
-      if (result.ok) {
-        onJoined(result.participant, showPin ? pin : undefined);
-        return;
+      const requestPin = showPin ? pin : undefined;
+      try {
+        const result = await joinEvent({ slug, name, pin: requestPin });
+        if (result.ok) {
+          onJoined(result.participant, requestPin);
+          return;
+        }
+        if (result.needsPin) setPinRequired(true);
+        setError(result.error);
+      } catch {
+        setError("Couldn't open your availability. Try again.");
       }
-      if (result.needsPin) setPinRequired(true);
-      setError(result.error);
     });
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mx-auto max-w-sm space-y-5 py-6">
-      <div className="text-center">
-        <h2 className="text-lg font-semibold">Add your availability</h2>
-        <p className="mt-1 text-sm text-muted">
-          Already responded? Use the same name to edit your answers.
-        </p>
-      </div>
+    <form onSubmit={handleSubmit} className="max-w-sm space-y-3">
+      <h2 className="text-lg font-semibold">Add your availability</h2>
 
       <Field label="Your name" htmlFor="participant-name">
         <Input
@@ -56,38 +57,42 @@ export function JoinForm({
           value={name}
           onChange={(e) => {
             setName(e.target.value);
+            if (pinRequired) setPin("");
             setPinRequired(false); // a different name may not need a PIN
             setError(null);
           }}
           placeholder="e.g. Alex"
           maxLength={40}
           autoComplete="given-name"
+          readOnly={isPending}
           required
         />
       </Field>
 
       {!pinRequired && (
-        <label className="flex cursor-pointer items-center gap-2.5 text-sm">
-          <input
-            type="checkbox"
-            checked={usePin}
-            onChange={(e) => setUsePin(e.target.checked)}
-            className="size-4 accent-accent"
-          />
-          <span>
-            Protect my answers with a PIN <span className="text-muted">(optional)</span>
-          </span>
-        </label>
+        <button
+          type="button"
+          aria-expanded={usePin}
+          disabled={isPending}
+          onClick={() => setUsePin(!usePin)}
+          className="flex min-h-11 items-center gap-1.5 rounded text-sm text-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-accent"
+        >
+          <ChevronDown className={usePin ? "size-4 rotate-180" : "size-4"} aria-hidden />
+          {usePin ? "Remove PIN" : "Add a PIN (optional)"}
+        </button>
       )}
 
       {showPin && (
         <Field
           label={pinRequired ? "PIN for this name" : "Choose a 4-digit PIN"}
           htmlFor="participant-pin"
-          hint={pinRequired ? undefined : "You'll need it to edit your answers on another device."}
+          hint={pinRequired ? undefined : "Use it to edit your answers on another device."}
         >
           <div className="relative">
-            <Lock className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted" />
+            <Lock
+              className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted"
+              aria-hidden
+            />
             <Input
               id="participant-pin"
               value={pin}
@@ -97,6 +102,7 @@ export function JoinForm({
               placeholder="••••"
               className="pl-9 tracking-[0.3em]"
               autoFocus={pinRequired}
+              readOnly={isPending}
               required
             />
           </div>
@@ -109,9 +115,16 @@ export function JoinForm({
         </p>
       )}
 
-      <Button type="submit" className="w-full" disabled={!canSubmit}>
-        {isPending ? <LoaderCircle className="size-4 animate-spin" /> : "Continue"}
+      <Button type="submit" size="lg" className="w-full" disabled={!canSubmit}>
+        {isPending ? (
+          <>
+            <LoaderCircle className="size-4 animate-spin" aria-hidden /> Opening…
+          </>
+        ) : (
+          "Fill in your times"
+        )}
       </Button>
+      <p className="text-xs text-muted">Already responded? Use the same name to edit your answers.</p>
     </form>
   );
 }
