@@ -275,7 +275,7 @@ export function PickFinalTime({
         </div>
       </div>
 
-      <p className="mt-3 text-sm" aria-live="polite">
+      <p className="mt-3 text-sm wrap-anywhere" aria-live="polite">
         {participants.length === 0 ? (
           <span className="text-muted">No one has responded yet.</span>
         ) : (

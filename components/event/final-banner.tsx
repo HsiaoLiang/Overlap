@@ -95,7 +95,7 @@ function PeopleList({
             <li
               key={p.id}
               className={cn(
-                "rounded-full px-2.5 py-0.5",
+                "max-w-full rounded-full px-2.5 py-0.5 wrap-anywhere",
                 // Coming: solid chips. Can't make it: outlined.
                 muted ? "ring-1 ring-on-accent/50 ring-inset" : "bg-on-accent font-medium text-accent",
               )}

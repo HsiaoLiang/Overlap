@@ -91,13 +91,13 @@ export function GroupPanel({
 
       {focused && (
         <div className="flex items-center justify-between rounded-lg bg-accent/10 px-3 py-2 text-sm">
-          <span>
+          <span className="min-w-0 wrap-anywhere">
             Showing <span className="font-medium">{focused.name}</span>&apos;s availability
           </span>
           <button
             type="button"
             onClick={() => setFocusId(null)}
-            className="inline-flex items-center gap-1 font-medium text-accent-ink"
+            className="inline-flex shrink-0 items-center gap-1 font-medium text-accent-ink"
           >
             <X className="size-3.5" /> Show everyone
           </button>
@@ -147,13 +147,13 @@ export function GroupPanel({
           {participants.map((p) => {
             const isFocused = p.id === focusId;
             return (
-              <li key={p.id}>
+              <li key={p.id} className="max-w-full">
                 <button
                   type="button"
                   aria-pressed={isFocused}
                   onClick={() => setFocusId(isFocused ? null : p.id)}
                   className={cn(
-                    "rounded-full border px-3 py-1 text-sm transition-colors",
+                    "max-w-full rounded-full border px-3 py-1 text-sm wrap-anywhere transition-colors",
                     isFocused
                       ? "border-accent bg-accent text-on-accent"
                       : "border-line hover:bg-subtle",
@@ -217,11 +217,11 @@ function SlotDetails({
           <dl className="mt-2 grid gap-1 text-[13px]">
             <div className="flex gap-2">
               <dt className="w-16 shrink-0 text-accent-ink">Free</dt>
-              <dd>{freePeople.length ? freePeople.map(name).join(", ") : "—"}</dd>
+              <dd className="min-w-0 wrap-anywhere">{freePeople.length ? freePeople.map(name).join(", ") : "—"}</dd>
             </div>
             <div className="flex gap-2">
               <dt className="w-16 shrink-0 text-muted">Not free</dt>
-              <dd className="text-muted">{busyPeople.length ? busyPeople.map(name).join(", ") : "—"}</dd>
+              <dd className="min-w-0 wrap-anywhere text-muted">{busyPeople.length ? busyPeople.map(name).join(", ") : "—"}</dd>
             </div>
           </dl>
         </>

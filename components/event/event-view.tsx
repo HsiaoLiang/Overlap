@@ -365,7 +365,7 @@ export function EventView({
               {me ? (
                 <>
                   <div className="mb-3 flex flex-wrap items-center justify-between gap-x-2">
-                    <div>
+                    <div className="min-w-0">
                       <h2
                         ref={myHeading}
                         tabIndex={-1}
@@ -374,7 +374,9 @@ export function EventView({
                         Your availability
                       </h2>
                       <p className="flex flex-wrap items-center gap-x-1 text-sm text-muted">
-                        <span>Responding as <strong className="font-medium text-ink">{me.name}</strong></span>
+                        <span className="min-w-0 wrap-anywhere">
+                          Responding as <strong className="font-medium text-ink">{me.name}</strong>
+                        </span>
                         <button
                           type="button"
                           onClick={() => setIdentity(null)}
@@ -453,13 +455,13 @@ function upsert(list: Participant[], participant: Participant) {
 function LiveBadge({ status, recentChange }: { status: LiveStatus; recentChange: string | null }) {
   const label = { live: "Live", connecting: "Connecting…", offline: "Offline" }[status];
   return (
-    <span aria-live="polite" className="inline-flex items-center gap-2 text-xs text-muted">
+    <span aria-live="polite" className="inline-flex min-w-0 items-center gap-2 text-xs text-muted">
       {recentChange && (
-        <span className="animate-fade-in rounded-full bg-accent/10 px-2 py-0.5 text-accent-ink">
+        <span className="min-w-0 animate-fade-in rounded-full bg-accent/10 px-2 py-0.5 wrap-anywhere text-accent-ink">
           {recentChange}
         </span>
       )}
-      <span className="inline-flex items-center gap-1.5">
+      <span className="inline-flex shrink-0 items-center gap-1.5">
         <span className="relative flex size-2">
           {status === "live" && (
             <span className="absolute inline-flex size-full animate-ping rounded-full bg-accent opacity-60" />

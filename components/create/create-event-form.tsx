@@ -87,8 +87,8 @@ export function CreateEventForm() {
     <form onSubmit={handleSubmit} className="space-y-4">
       {reviewing ? (
         <>
-          <div className="flex items-center justify-between gap-3">
-            <h2 ref={headingRef} tabIndex={-1} className="scroll-mt-4 text-xl font-semibold focus:outline-none">
+          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+            <h2 ref={headingRef} tabIndex={-1} className="min-w-0 scroll-mt-4 text-xl font-semibold wrap-anywhere focus:outline-none">
               Review event
             </h2>
             <Button

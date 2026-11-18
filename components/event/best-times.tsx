@@ -36,7 +36,7 @@ export function BestTimes({
           {total === 0 ? "Suggested times appear as people respond." : "No one has marked any times yet."}
         </p>
       ) : (
-        <ol id={listId} className="grid gap-2 lg:grid-cols-3 lg:gap-3">
+        <ol id={listId} className="grid grid-cols-1 gap-2 lg:grid-cols-3 lg:gap-3">
           {ranges.map((range, index) => {
             const { day, time, duration } = describeRange(event, range.keys, viewerTimeZone);
             const freeIds = new Set(range.free.map((p) => p.id));
@@ -66,7 +66,7 @@ export function BestTimes({
                   <span className="text-sm">
                     {time} <span className="text-muted">· {duration}</span>
                   </span>
-                  <span className="w-full truncate text-xs text-muted">
+                  <span className="line-clamp-2 w-full text-xs wrap-anywhere text-muted">
                     {missing.length === 0
                       ? "Everyone's free"
                       : `Can't make it: ${missing.map((p) => p.name).join(", ")}`}

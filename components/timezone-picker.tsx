@@ -27,7 +27,7 @@ function localTime(id: string, at: number) {
 
 /**
  * Timezone picker. Most people never change the detected timezone, so it's
- * shown as one line ("Taipei time (GMT+8) · Change"). Change opens a dialog
+ * shown as a compact summary. Change opens a dialog
  * with suggestions and popular cities, and a search that understands cities,
  * countries, offsets ("+8"), abbreviations ("PST") and Chinese names.
  */
@@ -110,35 +110,30 @@ export function TimezonePicker({
   }, [active]);
 
   const summary = useTimeZoneLabel(value);
+  const isField = variant === "field";
 
   return (
     <>
-      {variant === "field" ? (
-        <button
-          type="button"
-          onClick={open}
-          aria-label={`Timezone: ${summary}. Change`}
-          className="flex h-11 w-full items-center justify-between gap-3 rounded-lg border border-line bg-surface px-3 text-left text-base shadow-sm transition-colors hover:border-line-strong focus-visible:outline-2 focus-visible:outline-accent sm:text-sm"
-        >
-          <span className="inline-flex min-w-0 items-center gap-2">
-            <Globe className="size-4 shrink-0 text-muted" aria-hidden />
-            <span className="truncate">{summary}</span>
-          </span>
-          <span className="shrink-0 text-sm font-medium text-accent-ink">Change</span>
-        </button>
-      ) : (
-        <span className="inline-flex flex-wrap items-center gap-1">
-          <span className="font-medium text-ink">{summary}</span>
-          <span aria-hidden>·</span>
-          <button
-            type="button"
-            onClick={open}
-            className="rounded font-medium text-accent-ink underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-accent"
-          >
-            Change
-          </button>
+      <button
+        type="button"
+        onClick={open}
+        aria-label={`Timezone: ${summary}. Change`}
+        aria-haspopup="dialog"
+        className={cn(
+          "inline-flex min-h-11 min-w-0 max-w-full flex-wrap items-center gap-x-2 gap-y-1 rounded-lg py-2 text-left focus-visible:outline-2 focus-visible:outline-accent",
+          isField
+            ? "w-full border border-line bg-surface px-3 text-base shadow-sm transition-colors hover:border-line-strong sm:text-sm"
+            : "group text-sm font-medium text-ink",
+        )}
+      >
+        <span className="flex min-w-0 flex-[1_1_8rem] items-center gap-2">
+          {isField && <Globe className="size-4 shrink-0 text-muted" aria-hidden />}
+          <span className="min-w-0 wrap-anywhere">{summary}</span>
         </span>
-      )}
+        <span className="ml-auto shrink-0 text-sm font-medium text-accent-ink underline-offset-2 group-hover:underline">
+          Change
+        </span>
+      </button>
 
       <dialog
         ref={dialogRef}
@@ -147,8 +142,8 @@ export function TimezonePicker({
         className="m-auto max-h-[85dvh] w-[min(28rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-line bg-surface p-0 text-ink shadow-xl backdrop:bg-scrim backdrop:backdrop-blur-sm max-sm:mt-4 max-sm:mb-auto"
       >
         <div className="flex max-h-[85dvh] animate-fade-in flex-col">
-          <div className="flex items-center justify-between gap-2 px-4 pt-4">
-            <h2 id={`${listId}-title`} className="font-semibold">
+          <div className="flex shrink-0 items-center justify-between gap-2 px-4 pt-4">
+            <h2 id={`${listId}-title`} className="min-w-0 font-semibold wrap-anywhere">
               Choose a timezone
             </h2>
             <Button
@@ -156,18 +151,20 @@ export function TimezonePicker({
               size="icon"
               aria-label="Close"
               onClick={() => dialogRef.current?.close()}
-              className="-mr-2"
+              className="-mr-2 min-h-11 min-w-11"
             >
               <X className="size-4" />
             </Button>
           </div>
 
-          <div className="relative px-4 pt-3 pb-2">
+          <div className="relative shrink-0 px-4 pt-3 pb-2">
             <Search className="pointer-events-none absolute top-1/2 left-7 mt-0.5 size-4 -translate-y-1/2 text-muted" aria-hidden />
             <input
               ref={searchRef}
               type="search"
               role="combobox"
+              aria-label="Search timezones"
+              aria-autocomplete="list"
               aria-expanded
               aria-controls={listId}
               aria-activedescendant={rows[active] ? `${listId}-${rows[active].zone.id}` : undefined}
@@ -183,9 +180,9 @@ export function TimezonePicker({
             />
           </div>
 
-          <ul ref={listRef} id={listId} role="listbox" aria-label="Timezones" className="flex-1 overflow-y-auto px-2 pb-3">
+          <ul ref={listRef} id={listId} role="listbox" aria-label="Timezones" className="min-h-0 flex-1 overflow-y-auto px-2 pb-3">
             {rows.length === 0 && (
-              <li role="presentation" className="px-3 py-8 text-center text-sm text-muted">
+              <li role="presentation" className="px-3 py-8 text-center text-sm wrap-anywhere text-muted">
                 No timezones match “{query.trim()}”. Try a city name or an offset like +8.
               </li>
             )}
@@ -219,10 +216,10 @@ export function TimezonePicker({
                       aria-hidden
                     />
                     <span className="min-w-0 flex-1">
-                      <span className={cn("block truncate", selected ? "font-semibold text-accent-ink" : "font-medium")}>
+                      <span className={cn("block wrap-anywhere", selected ? "font-semibold text-accent-ink" : "font-medium")}>
                         {zone.city}
                       </span>
-                      <span className="block truncate text-xs text-muted">
+                      <span className="block text-xs wrap-anywhere text-muted">
                         {[zone.region, note].filter(Boolean).join(" · ") || "Coordinated Universal Time"}
                       </span>
                     </span>
