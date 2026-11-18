@@ -207,23 +207,25 @@ export function TimezonePicker({
                     onClick={() => choose(zone.id)}
                     onMouseEnter={() => setActive(index)}
                     className={cn(
-                      "flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2",
+                      "flex cursor-pointer flex-wrap items-center gap-x-3 gap-y-1 rounded-lg px-3 py-2",
                       index === active && "bg-subtle",
                     )}
                   >
-                    <Check
-                      className={cn("size-4 shrink-0 text-accent-ink", !selected && "invisible")}
-                      aria-hidden
-                    />
-                    <span className="min-w-0 flex-1">
-                      <span className={cn("block wrap-anywhere", selected ? "font-semibold text-accent-ink" : "font-medium")}>
-                        {zone.city}
-                      </span>
-                      <span className="block text-xs wrap-anywhere text-muted">
-                        {[zone.region, note].filter(Boolean).join(" · ") || "Coordinated Universal Time"}
+                    <span className="flex min-w-0 flex-[1_1_8rem] items-center gap-3">
+                      <Check
+                        className={cn("size-4 shrink-0 text-accent-ink", !selected && "invisible")}
+                        aria-hidden
+                      />
+                      <span className="min-w-0">
+                        <span className={cn("block wrap-anywhere", selected ? "font-semibold text-accent-ink" : "font-medium")}>
+                          {zone.city}
+                        </span>
+                        <span className="block text-xs wrap-anywhere text-muted">
+                          {[zone.region, note].filter(Boolean).join(" · ") || "Coordinated Universal Time"}
+                        </span>
                       </span>
                     </span>
-                    <span className="shrink-0 text-right tabular-nums">
+                    <span className="ml-auto shrink-0 text-right tabular-nums">
                       <span className="block text-sm">{openedAt !== null && localTime(zone.id, openedAt)}</span>
                       <span className="block text-xs text-muted">{zone.offset}</span>
                     </span>
