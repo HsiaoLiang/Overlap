@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToday } from "@/hooks/use-client-value";
@@ -15,12 +14,15 @@ const WEEKDAY_HEADERS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 export function DatePicker({
   value,
   onChange,
+  chosenOffset,
+  onMonthChange,
 }: {
   value: string[];
   onChange: (dates: string[]) => void;
+  chosenOffset: number | null;
+  onMonthChange: (offset: number) => void;
 }) {
   const today = useToday(); // null until we're in the browser
-  const [chosenOffset, setMonthOffset] = useState<number | null>(null); // 0 = this month
 
   const base = today
     ? { year: Number(today.slice(0, 4)), monthIndex: Number(today.slice(5, 7)) - 1 }
@@ -58,15 +60,15 @@ export function DatePicker({
   }
 
   return (
-    // Sits straight in the form (no box of its own: the form is already a card).
     <div>
-      <div className="mb-3 flex items-center justify-between">
+      <div className="mb-1 flex items-center justify-between">
         <Button
           variant="ghost"
           size="icon"
+          className="!size-11"
           aria-label="Previous month"
           disabled={monthOffset <= 0}
-          onClick={() => setMonthOffset(monthOffset - 1)}
+          onClick={() => onMonthChange(monthOffset - 1)}
         >
           <ChevronLeft className="size-4" />
         </Button>
@@ -76,9 +78,10 @@ export function DatePicker({
         <Button
           variant="ghost"
           size="icon"
+          className="!size-11"
           aria-label="Next month"
           disabled={monthOffset >= 12}
-          onClick={() => setMonthOffset(monthOffset + 1)}
+          onClick={() => onMonthChange(monthOffset + 1)}
         >
           <ChevronRight className="size-4" />
         </Button>
@@ -108,7 +111,7 @@ export function DatePicker({
                 aria-pressed={isOn}
                 aria-label={formatISODate(date, { weekday: "long", day: "numeric", month: "long" })}
                 className={cn(
-                  "relative flex aspect-square items-center justify-center rounded-lg text-sm transition-colors",
+                  "relative flex min-h-10 items-center justify-center rounded-lg text-sm transition-colors",
                   "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent",
                   isPast && "text-muted/40",
                   !isPast && !isOn && "text-ink hover:bg-subtle",
@@ -131,18 +134,13 @@ export function DatePicker({
         )}
       </div>
 
-      <div className="mt-3 flex min-h-8 items-center justify-between border-t border-line pt-3 text-sm">
-        <span className="text-muted">
-          {value.length === 0
-            ? "Tap or drag to pick dates"
-            : `${value.length} ${value.length === 1 ? "date" : "dates"} selected`}
-        </span>
-        {value.length > 0 && (
-          <Button variant="ghost" size="sm" onClick={() => onChange([])}>
-            Clear
+      {value.length > 0 && (
+        <div className="flex justify-end">
+          <Button variant="ghost" size="sm" className="min-h-11" onClick={() => onChange([])}>
+            Clear dates
           </Button>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

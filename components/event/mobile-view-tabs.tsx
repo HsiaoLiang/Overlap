@@ -1,89 +1,52 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { SegmentedControl } from "@/components/ui/segmented-control";
+import type { ReactNode } from "react";
+import { cn } from "@/lib/cn";
 
 export type MobileView = "mine" | "group";
 
-const isField = (el: EventTarget | null) =>
-  el instanceof HTMLElement && el.matches("input, select, textarea");
-
-/**
- * Phones only: "Your availability | Group" tabs.
- *
- * The tabs sit above the panels. Once you scroll past them, a copy slides up
- * as a bar fixed to the bottom of the screen, so you can switch views from
- * anywhere (people often didn't find the Group tab after scrolling down).
- * Switching from the bottom bar also scrolls back to the top of the panel.
- */
 export function MobileViewTabs({
   value,
   onChange,
   groupCount,
+  saveStatus,
+  isClosed,
 }: {
   value: MobileView;
   onChange: (view: MobileView) => void;
   groupCount: number;
+  saveStatus?: ReactNode;
+  isClosed: boolean;
 }) {
-  const tabsRef = useRef<HTMLDivElement>(null);
-  const [tabsInView, setTabsInView] = useState(true);
-  const [isTyping, setIsTyping] = useState(false);
-
-  // Watch whether the top tabs are on screen.
-  useEffect(() => {
-    const tabs = tabsRef.current;
-    if (!tabs) return;
-    const observer = new IntersectionObserver(([entry]) => {
-      setTabsInView(entry.isIntersecting);
-      // A focused field that gets removed from the page (e.g. the join form
-      // after joining) never fires "focusout", so re-check here.
-      setIsTyping(isField(document.activeElement));
-    });
-    observer.observe(tabs);
-    return () => observer.disconnect();
-  }, []);
-
-  // Hide the bar while typing, so it doesn't sit on top of the phone keyboard.
-  useEffect(() => {
-    const onFocusIn = (e: FocusEvent) => setIsTyping(isField(e.target));
-    const onFocusOut = () => setIsTyping(false);
-    document.addEventListener("focusin", onFocusIn);
-    document.addEventListener("focusout", onFocusOut);
-    return () => {
-      document.removeEventListener("focusin", onFocusIn);
-      document.removeEventListener("focusout", onFocusOut);
-    };
-  }, []);
-
   const options = [
-    { value: "mine" as const, label: "Your availability" },
-    { value: "group" as const, label: `Group (${groupCount})` },
+    { value: "mine" as const, label: "Your availability", controls: "your-availability-panel" },
+    {
+      value: "group" as const,
+      label: `Group (${groupCount})`,
+      controls: isClosed ? "group-availability-panel" : "group-recommendations group-availability-panel",
+    },
   ];
 
-  function switchFromBottomBar(view: MobileView) {
-    onChange(view);
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    tabsRef.current?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
-  }
-
   return (
-    <>
-      <div ref={tabsRef} className="scroll-mt-4 lg:hidden">
-        <SegmentedControl label="Show" value={value} onChange={onChange} options={options} />
+    <div className="sticky top-0 z-20 -my-2 bg-canvas py-2 lg:hidden">
+      <div role="group" aria-label="Availability view" className="grid grid-cols-2 gap-1 rounded-xl bg-subtle p-1">
+        {options.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            aria-controls={option.controls}
+            aria-pressed={value === option.value}
+            onClick={() => onChange(option.value)}
+            className={cn(
+              "min-h-11 rounded-lg px-2 text-sm font-medium focus-visible:outline-2 focus-visible:outline-accent",
+              value === option.value ? "bg-surface text-ink ring-1 ring-line" : "text-muted hover:text-ink",
+            )}
+          >
+            {option.label}
+          </button>
+        ))}
       </div>
-
-      {!tabsInView && !isTyping && (
-        <div className="fixed inset-x-0 bottom-0 z-30 animate-slide-up border-t border-line bg-canvas/85 px-4 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-md lg:hidden">
-          <div className="mx-auto max-w-md">
-            <SegmentedControl
-              label="Switch view"
-              value={value}
-              onChange={switchFromBottomBar}
-              options={options}
-            />
-          </div>
-        </div>
-      )}
-    </>
+      {saveStatus && <div className="flex min-h-6 items-center px-1">{saveStatus}</div>}
+    </div>
   );
 }

@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState, type ComponentProps, type KeyboardEvent, type ReactNode } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 import { formatISODate } from "@/lib/dates";
 import type { ViewerGrid } from "@/lib/slots";
@@ -13,7 +15,7 @@ const ARROWS: Record<string, [number, number]> = {
 };
 
 const LABEL_PX = 40; // the time labels column (2.5rem)
-const MIN_COLUMN_PX = 40; // narrowest day column we allow (still easy to tap)
+const MIN_COLUMN_PX = 44; // keep day columns wide enough to tap
 const DAYS_PER_PAGE = 7; // when days don't all fit, page through a week at a time
 
 /** Which day the grid starts at, shared by both grids so they page together. */
@@ -27,11 +29,10 @@ const isISODate = (id: string) => /^\d{4}-\d{2}-\d{2}$/.test(id);
  *
  * Many days: instead of scrolling sideways (hard to discover, and it fights
  * with drag-painting on phones), we show as many days as fit — at most a week —
- * with a tab for each week. `firstColumn` is shared by both grids so
+ * with paging controls. `firstColumn` is shared by both grids so
  * they page together.
  *
- * The cell body is its own element so the drag-to-paint handlers (and
- * `touch-action: none`) apply only there.
+ * The cell body is its own element so drag-to-paint applies only there.
  *
  * Keyboard: the grid is a single Tab stop; arrow keys move between cells.
  * Each cell must render `data-row`, `data-col` and the given `tabIndex`.
@@ -62,7 +63,7 @@ export function TimeGrid({
   }, []);
 
   const total = grid.columns.length;
-  // Width 0 means hidden (the other tab on phones): treat it as not measured yet.
+  // Width 0 means hidden (the other view on phones): treat it as not measured yet.
   const fits = !width ? total : Math.max(1, Math.floor((width - LABEL_PX) / MIN_COLUMN_PX));
   const pageSize = total <= fits ? total : Math.min(fits, DAYS_PER_PAGE);
   const isPaged = pageSize < total;
@@ -121,6 +122,10 @@ export function TimeGrid({
     if (!isISODate(a.id)) return from === to ? a.label : `${a.label} – ${b.label}`;
     const end = formatISODate(b.id, { day: "numeric", month: "short" });
     if (from === to) return end;
+    if (a.id.slice(0, 4) !== b.id.slice(0, 4)) {
+      const options = { day: "numeric", month: "short", year: "numeric" } as const;
+      return `${formatISODate(a.id, options)} – ${formatISODate(b.id, options)}`;
+    }
     const sameMonth = a.id.slice(0, 7) === b.id.slice(0, 7);
     return `${formatISODate(a.id, sameMonth ? { day: "numeric" } : { day: "numeric", month: "short" })} – ${end}`;
   }
@@ -142,21 +147,52 @@ export function TimeGrid({
   // Keep the selected tab in view when the tab row scrolls (many weeks on a phone).
   useEffect(() => {
     const row = tabsRef.current;
-    const tab = row?.querySelector<HTMLElement>('[aria-selected="true"]');
+    const tab = row?.querySelector<HTMLElement>('[aria-current="true"]');
     if (row && tab) row.scrollLeft = tab.offsetLeft - (row.clientWidth - tab.clientWidth) / 2;
   }, [currentPage, isPaged]);
 
+  function movePage(delta: number) {
+    const page = pages[currentPage + delta];
+    if (page) onFirstColumnChange(page.from);
+  }
+
   return (
     <div ref={rootRef} className="min-w-0">
-      {/* Many days: one tab per week, so it's obvious how many there are and
-          which one you're looking at. Both grids share the selection. */}
       {isPaged && (
-        <div className="mb-3">
+        <div className="mb-3 flex items-center gap-2 rounded-lg border border-line lg:hidden">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="min-h-11 min-w-11 aria-disabled:opacity-40"
+            aria-label="Previous dates"
+            aria-disabled={currentPage === 0}
+            onClick={() => movePage(-1)}
+          >
+            <ChevronLeft className="size-5" aria-hidden />
+          </Button>
+          <div className="flex-1 text-center" aria-live="polite" aria-atomic="true">
+            <div className="text-sm font-medium">{pages[currentPage].range}</div>
+            <div className="text-xs text-muted">Page {currentPage + 1} of {pageCount}</div>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="min-h-11 min-w-11 aria-disabled:opacity-40"
+            aria-label="Next dates"
+            aria-disabled={currentPage === pageCount - 1}
+            onClick={() => movePage(1)}
+          >
+            <ChevronRight className="size-5" aria-hidden />
+          </Button>
+        </div>
+      )}
+      {isPaged && (
+        <div className="mb-3 hidden lg:block">
           <div
             ref={tabsRef}
-            role="tablist"
+            role="group"
             aria-label="Days to show"
-            className="flex gap-1 overflow-x-auto rounded-xl bg-subtle p-1 [scrollbar-width:none]"
+            className="relative flex gap-1 overflow-x-auto rounded-xl bg-subtle p-1 [scrollbar-width:none]"
           >
             {pages.map((page, i) => {
               const selected = i === currentPage;
@@ -167,8 +203,7 @@ export function TimeGrid({
                 <button
                   key={page.from}
                   type="button"
-                  role="tab"
-                  aria-selected={selected}
+                  aria-current={selected ? "true" : undefined}
                   onClick={() => onFirstColumnChange(page.from)}
                   className={cn(
                     "min-w-[7.5rem] flex-1 shrink-0 rounded-lg px-3 py-1.5 text-center transition-[color,background-color]",

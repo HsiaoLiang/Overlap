@@ -1,16 +1,13 @@
 "use client";
 
-import { Sparkles } from "lucide-react";
+import { useId, useState } from "react";
+import { ChevronDown } from "lucide-react";
 import type { TimeRange } from "@/lib/availability";
 import { cn } from "@/lib/cn";
 import { describeRange } from "@/lib/slots";
 import type { OverlapEvent, Participant } from "@/lib/types";
 
-/**
- * "Best times" summary: the top ranges where the most people are free.
- * Tapping one highlights it on the group heatmap (and, for the organiser,
- * loads it into "Pick the final time").
- */
+/** Pick a suggested time to highlight it on the heatmap. */
 export function BestTimes({
   event,
   ranges,
@@ -26,23 +23,20 @@ export function BestTimes({
   selectedId: string | null;
   onSelect: (id: string | null) => void;
 }) {
+  const listId = useId();
+  const [expanded, setExpanded] = useState(false);
   const total = participants.length;
 
   return (
     <section aria-labelledby="best-times-heading">
-      <h2 id="best-times-heading" className="mb-3 flex items-center gap-2 font-semibold">
-        <Sparkles className="size-4 text-accent-ink" aria-hidden />
-        Best times
-      </h2>
+      <h2 id="best-times-heading" className="mb-2 font-semibold">Best times</h2>
 
       {ranges.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-line-strong px-4 py-5 text-center text-sm text-muted">
-          {total === 0
-            ? "No one has responded yet. Best times will show up here as people add their availability."
-            : "No one has marked any times yet."}
+        <p className="text-sm text-muted">
+          {total === 0 ? "Suggested times appear as people respond." : "No one has marked any times yet."}
         </p>
       ) : (
-        <ol className="grid gap-2 sm:grid-cols-3 sm:gap-3">
+        <ol id={listId} className="grid gap-2 lg:grid-cols-3 lg:gap-3">
           {ranges.map((range, index) => {
             const { day, time, duration } = describeRange(event, range.keys, viewerTimeZone);
             const freeIds = new Set(range.free.map((p) => p.id));
@@ -51,72 +45,50 @@ export function BestTimes({
             const isBest = index === 0;
 
             return (
-              <li
-                key={range.id}
-                className={cn(
-                  "flex animate-fade-in flex-col overflow-hidden rounded-2xl border shadow-sm transition",
-                  "hover:-translate-y-0.5 hover:shadow-md",
-                  isSelected
-                    ? "border-accent ring-2 ring-accent/30"
-                    : isBest
-                      ? "border-accent/40"
-                      : "border-line",
-                  isBest ? "bg-accent/[0.06]" : "bg-surface",
-                )}
-              >
+              <li key={range.id} className={!isBest && !expanded ? "hidden lg:list-item" : undefined}>
                 <button
                   type="button"
                   aria-pressed={isSelected}
                   onClick={() => onSelect(isSelected ? null : range.id)}
-                  className="w-full flex-1 p-3 text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent sm:p-4"
+                  className={cn(
+                    "flex h-full w-full flex-col gap-1 rounded-xl border px-3 py-2.5 text-left",
+                    "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
+                    isSelected ? "border-accent ring-1 ring-accent/40" : "border-line hover:border-line-strong",
+                    isBest ? "bg-accent/[0.06]" : "bg-surface",
+                  )}
                 >
-                  <div className="flex items-center justify-between text-xs">
-                    <span
-                      className={cn(
-                        "rounded-full px-2 py-0.5 font-medium",
-                        isBest ? "bg-accent text-on-accent" : "bg-subtle text-muted",
-                      )}
-                    >
-                      {isBest ? "Best" : `#${index + 1}`}
-                    </span>
-                    <span className="text-muted tabular-nums">
-                      <span className="font-semibold text-ink">{range.free.length}</span>/{total}{" "}
-                      free
-                    </span>
-                  </div>
-
-                  {/* Phones: day and time on one line to save space. */}
-                  <p className="mt-2 sm:mt-3">
+                  <span className="flex w-full flex-wrap items-baseline justify-between gap-x-2">
                     <span className="font-semibold">{day}</span>
-                    <span className="max-sm:hidden">
-                      <br />
+                    <span className="text-xs text-muted tabular-nums">
+                      <span className="font-semibold text-ink">{range.free.length}</span>/{total} free
                     </span>
-                    <span className="text-sm">
-                      <span className="sm:hidden"> · </span>
-                      {time} <span className="text-muted">· {duration}</span>
-                    </span>
-                  </p>
-
-                  <div
-                    className="mt-3 h-1.5 overflow-hidden rounded-full bg-subtle max-sm:hidden"
-                    aria-hidden
-                  >
-                    <div
-                      className="h-full rounded-full bg-accent"
-                      style={{ width: `${(range.free.length / total) * 100}%` }}
-                    />
-                  </div>
-
-                  <p className="mt-1 truncate text-xs text-muted sm:mt-2">
+                  </span>
+                  <span className="text-sm">
+                    {time} <span className="text-muted">· {duration}</span>
+                  </span>
+                  <span className="w-full truncate text-xs text-muted">
                     {missing.length === 0
                       ? "Everyone's free"
                       : `Can't make it: ${missing.map((p) => p.name).join(", ")}`}
-                  </p>
+                  </span>
                 </button>
               </li>
             );
           })}
         </ol>
+      )}
+
+      {ranges.length > 1 && (
+        <button
+          type="button"
+          aria-controls={listId}
+          aria-expanded={expanded}
+          onClick={() => setExpanded((value) => !value)}
+          className="mt-1 flex min-h-11 items-center gap-1.5 rounded text-sm font-medium text-accent-ink focus-visible:outline-2 focus-visible:outline-accent lg:hidden"
+        >
+          {expanded ? "Show fewer times" : "Show more times"}
+          <ChevronDown className={cn("size-4", expanded && "rotate-180")} aria-hidden />
+        </button>
       )}
     </section>
   );
